@@ -1,6 +1,6 @@
 # VEGA_project
 ## Deploying backend
-run following code in VS Code terminal:
+run following code lines in VS Code terminal:
 ```
 dotnet user-secrets init 
 ```
