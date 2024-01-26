@@ -22,6 +22,23 @@ namespace vega.Controllers
             _db = context;
         }
 
+        /// <summary>
+        /// Authorizes user in system.
+        /// </summary>
+        /// <returns>Returns JWT</returns>
+        /// <remarks>
+        /// Sample request:
+        ///
+        ///     GET /api/Auth
+        ///     {
+        ///        "userLogin": string,
+        ///        "password": string,
+        ///     }
+        ///
+        /// </remarks>
+        /// <response code="200">Returns JWT Token</response>
+        /// <response code="400">If user is not registered in system or password is wrong</response>
+        /// <response code="500">If Database does not store users role</response>
         [HttpGet(Name = "Authorize")]
         public async Task<ActionResult<string>> Get(string userLogin, string password)
         {
