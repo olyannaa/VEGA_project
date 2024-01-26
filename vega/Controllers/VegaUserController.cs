@@ -1,9 +1,13 @@
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace vega.Controllers
 {
     [ApiController]
-    [Route("[controller]")]
+    [Route("api/[controller]")]
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
     public class VegaUserController : ControllerBase
     {
         private readonly ILogger<VegaUserController> _logger;
@@ -15,9 +19,14 @@ namespace vega.Controllers
         }
 
         [HttpGet(Name = "GetVegaUsers")]
-        public IEnumerable<User> Get()
+        public ActionResult<IDictionary<string, object>> Get()
         {
-            return _db.Users.ToList();
+            var result = HttpContext.User.Claims.FirstOrDefault(value => value.Type == ClaimTypes.Name)?.Value;
+            if (result == null)
+            {
+                throw new Exception("No information provided about user login");
+            } 
+            return new Dictionary<string, object>{{"login", result}}; 
         }
     }
 }
