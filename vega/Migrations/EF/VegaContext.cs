@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿
 using Microsoft.EntityFrameworkCore;
 
 namespace vega;
@@ -9,6 +8,8 @@ public partial class VegaContext : DbContext
     public virtual DbSet<Role> Roles { get; set; }
 
     public virtual DbSet<User> Users { get; set; }
+
+    public virtual DbSet<UserRole> UserRoles {get; set; }
     
     public VegaContext()
     {
@@ -56,6 +57,18 @@ public partial class VegaContext : DbContext
             entity.Property(e => e.Password)
                 .HasMaxLength(100)
                 .HasColumnName("password");
+        });
+
+        modelBuilder.Entity<UserRole>(entity =>
+        {
+            entity
+                .HasNoKey()
+                .ToTable("role_user");
+
+            entity.Property(e => e.UserId)
+                .HasColumnName("user_id");
+            entity.Property(e => e.RoleId)
+                .HasColumnName("role_id");
         });
 
         OnModelCreatingPartial(modelBuilder);

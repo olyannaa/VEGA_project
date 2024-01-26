@@ -26,6 +26,7 @@ namespace vega.Controllers
         public async Task<ActionResult<string>> Get(string userLogin, string password)
         {
             var user = await _db.Users.FirstOrDefaultAsync(user => user.Login == userLogin);
+
             if (user == null)
             {
                 return BadRequest("User is not registered in system");
@@ -36,7 +37,16 @@ namespace vega.Controllers
                 return BadRequest("Wrong password");
             }
 
-            var claims = new List<Claim> {new Claim(ClaimTypes.Name, userLogin)};
+            var userRole = await _db.UserRoles.FirstOrDefaultAsync(userRole => userRole.UserId == user.Id);
+            var userRoleId = userRole?.RoleId;
+            var role = (await _db.Roles.FirstOrDefaultAsync(role => role.Id == userRoleId))?.Role1;
+            if (role == null)
+            {
+                return StatusCode(500, "Database does not store users role");
+            }
+
+            var claims = new List<Claim> {new Claim(ClaimTypes.Name, userLogin), new Claim(ClaimTypes.Role, role)};
+
             var jwt = new JwtSecurityToken(
                 issuer: AuthOptions.ISSUER,
                 audience: AuthOptions.AUDIENCE,

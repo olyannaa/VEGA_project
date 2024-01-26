@@ -21,12 +21,14 @@ namespace vega.Controllers
         [HttpGet(Name = "GetVegaUsers")]
         public ActionResult<IDictionary<string, object>> Get()
         {
-            var result = HttpContext.User.Claims.FirstOrDefault(value => value.Type == ClaimTypes.Name)?.Value;
-            if (result == null)
+            var login = HttpContext.User.Claims.FirstOrDefault(value => value.Type == ClaimTypes.Name)?.Value;
+            var role = HttpContext.User.Claims.FirstOrDefault(value => value.Type == ClaimTypes.Role)?.Value;
+            if (login == null || role == null)
             {
-                throw new Exception("No information provided about user login");
+                return StatusCode(500, "User information is not stated");
             } 
-            return new Dictionary<string, object>{{"login", result}}; 
+
+            return new Dictionary<string, object>{{"login", login}, {"role", role}};
         }
     }
 }
