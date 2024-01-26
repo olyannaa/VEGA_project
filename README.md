@@ -2,6 +2,9 @@
 ## Deploying backend
 run following code lines in VS Code terminal:
 ```
+cd vega
+```
+```
 dotnet user-secrets init 
 ```
 ```
