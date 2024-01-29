@@ -30,16 +30,16 @@ namespace vega.Controllers
         /// <response code="400">If user is not registered in system or password is wrong</response>
         /// <response code="500">If Database does not store users role</response>
         [HttpPost(Name = "Authorize")]
-        public async Task<ActionResult<string>> Get(string userLogin, string password)
+        public async Task<ActionResult<string>> Get([FromBody] UserAuthModel userData)
         {
-            var user = await _db.Users.FirstOrDefaultAsync(user => user.Login == userLogin);
+            var user = await _db.Users.FirstOrDefaultAsync(user => user.Login == userData.Login);
 
             if (user == null)
             {
                 return BadRequest("User is not registered in system");
             }
 
-            if (user.Password != password)
+            if (user.Password != userData.Password)
             {
                 return BadRequest("Wrong password");
             }
@@ -52,7 +52,7 @@ namespace vega.Controllers
                 return StatusCode(500, "Database does not store users role");
             }
 
-            var claims = new List<Claim> {new Claim(ClaimTypes.Name, userLogin), new Claim(ClaimTypes.Role, role)};
+            var claims = new List<Claim> {new Claim(ClaimTypes.Name, userData.Login), new Claim(ClaimTypes.Role, role)};
 
             var jwt = new JwtSecurityToken(
                 issuer: AuthOptions.ISSUER,
