@@ -34,7 +34,7 @@ namespace vega.Controllers
         {
             var user = await _db.Users.FirstOrDefaultAsync(user => user.Login == userData.Login);
 
-            if (user == null)
+            if (userData.Login == null || user == null)
             {
                 return BadRequest("User is not registered in system");
             }
