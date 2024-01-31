@@ -25,7 +25,10 @@ builder.Services.AddSingleton<IConfiguration>(builder.Configuration);
 builder.Services.AddDbContext<VegaContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("VegaDB")));
 
-builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme).AddCookie();
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme).AddCookie(options =>
+    {
+        options.LoginPath = PathString.Empty;
+    });
 
 var app = builder.Build();
 
