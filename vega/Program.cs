@@ -27,7 +27,20 @@ builder.Services.AddDbContext<VegaContext>(options =>
 
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme).AddCookie(options =>
     {
+        options.Cookie.Name = "vega_auth_cookie";
         options.LoginPath = PathString.Empty;
+        options.Events.OnRedirectToLogin = context =>
+        {
+            if (context.Request.Path.StartsWithSegments("/api")
+                    && context.Response.StatusCode == StatusCodes.Status200OK)
+                {
+                    context.Response.Clear();
+                    context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                    return Task.CompletedTask;
+                }
+                context.Response.Redirect(context.RedirectUri);
+                return Task.CompletedTask;
+        };
     });
 
 var app = builder.Build();
