@@ -1,13 +1,10 @@
-using System;
-using System.IdentityModel.Tokens.Jwt;
+
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Infrastructure;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
-using vega.Logic;
 
 namespace vega.Controllers
 {
@@ -27,12 +24,11 @@ namespace vega.Controllers
         /// <summary>
         /// Authorizes user in system.
         /// </summary>
-        /// <returns>Returns JWT</returns>
-        /// <response code="200">Returns JWT Token</response>
+        /// <response code="200">Cookies are saved</response>
         /// <response code="400">If user is not registered in system or password is wrong</response>
         /// <response code="500">If Database does not store users role</response>
-        [HttpPost(Name = "Authorize")]
-        public async Task<ActionResult<string>> Get([FromBody] UserAuthModel userData)
+        [HttpPost(Name = "LoginIn")]
+        public async Task<ActionResult<string>> LogIn([FromBody] UserAuthModel userData)
         {
             var user = await _db.Users.FirstOrDefaultAsync(user => user.Login == userData.Login);
 
@@ -66,6 +62,19 @@ namespace vega.Controllers
             await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme,
                 new ClaimsPrincipal(claimsIdentity), authProperties);
 
+            return Ok();
+        }
+
+        /// <summary>
+        /// Logout user from system.
+        /// </summary>
+        /// <response code="200">Ok</response>
+        /// <response code="401">If user is not authorized</response>
+        [HttpGet(Name = "LogOut")]
+        [Authorize(AuthenticationSchemes = CookieAuthenticationDefaults.AuthenticationScheme)]
+        public async Task<ActionResult<string>> LogOut()
+        {
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
             return Ok();
         }
     }
