@@ -10,6 +10,10 @@ public partial class VegaContext : DbContext
     public virtual DbSet<User> Users { get; set; }
 
     public virtual DbSet<UserRole> UserRoles {get; set; }
+
+    public virtual DbSet<AreaUser> AreaUsers {get; set; }
+
+    public virtual DbSet<Area> Areas {get; set; }
     
     public VegaContext()
     {
@@ -45,8 +49,9 @@ public partial class VegaContext : DbContext
         modelBuilder.Entity<User>(entity =>
         {
             entity
-                .HasNoKey()
-                .ToTable("vega_users");
+                .HasKey(e => e.Id);
+            
+            entity.ToTable("vega_users");
 
             entity.Property(e => e.Id)
                 .ValueGeneratedOnAdd()
@@ -61,14 +66,38 @@ public partial class VegaContext : DbContext
 
         modelBuilder.Entity<UserRole>(entity =>
         {
-            entity
-                .HasNoKey()
-                .ToTable("role_user");
+            entity.HasKey(e => e.UserId);
+            
+            entity.ToTable("role_user");
 
             entity.Property(e => e.UserId)
                 .HasColumnName("user_id");
             entity.Property(e => e.RoleId)
                 .HasColumnName("role_id");
+        });
+
+        OnModelCreatingPartial(modelBuilder);
+
+        modelBuilder.Entity<AreaUser>(entity =>
+        {
+            entity.HasKey(e => e.UserId);
+            
+            entity.ToTable("areas_users");
+
+            entity.Property(e => e.UserId)
+                .HasColumnName("user_id");
+            entity.Property(e => e.AreaId)
+                .HasColumnName("area_id");
+        });
+
+        modelBuilder.Entity<Area>(entity =>
+        {
+            entity
+                .HasNoKey()
+                .ToTable("areas");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.AreaName).HasColumnName("area_name");
         });
 
         OnModelCreatingPartial(modelBuilder);

@@ -37,7 +37,7 @@ namespace vega.Controllers
             {
                 return BadRequest("User is not registered in system");
             }
-
+            
             if (user.Password != userData.Password)
             {
                 return BadRequest("Wrong password");
@@ -51,7 +51,7 @@ namespace vega.Controllers
                 return StatusCode(500, "Database does not store users role");
             }
 
-            var claims = new List<Claim> {new Claim(ClaimTypes.Name, userData.Login), new Claim(ClaimTypes.Role, role)};
+            var claims = new List<Claim> {new Claim("login", userData.Login), new Claim(ClaimTypes.Role, role)};
 
             var jwt = new JwtSecurityToken(
                 issuer: AuthOptions.ISSUER,
