@@ -46,9 +46,10 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
 var app = builder.Build();
 
 app.UseCors(builder => 
-    builder.AllowAnyOrigin()
+    builder.WithOrigins("http://localhost")
         .AllowAnyHeader()
         .AllowAnyMethod()
+        .AllowCredentials()
     );
 
 // Configure the HTTP request pipeline.
