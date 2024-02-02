@@ -1,10 +1,10 @@
 
 using System.Security.Claims;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
+using System.IdentityModel.Tokens.Jwt;
+using Microsoft.IdentityModel.Tokens;
+using vega.Logic;
 
 namespace vega.Controllers
 {
@@ -24,11 +24,12 @@ namespace vega.Controllers
         /// <summary>
         /// Authorizes user in system.
         /// </summary>
-        /// <response code="200">Cookies are saved</response>
+        /// <returns>Returns JWT</returns>
+        /// <response code="200">Returns JWT Token</response>
         /// <response code="400">If user is not registered in system or password is wrong</response>
         /// <response code="500">If Database does not store users role</response>
         [HttpPost(Name = "LoginIn")]
-        public async Task<ActionResult<string>> LogIn([FromBody] UserAuthModel userData)
+        public async Task<ActionResult<AuthResultModel>> LogIn([FromBody] UserAuthModel userData)
         {
             var user = await _db.Users.FirstOrDefaultAsync(user => user.Login == userData.Login);
 
@@ -51,31 +52,22 @@ namespace vega.Controllers
             }
 
             var claims = new List<Claim> {new Claim(ClaimTypes.Name, userData.Login), new Claim(ClaimTypes.Role, role)};
-            var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
 
-            var authProperties = new AuthenticationProperties
-            {
-                AllowRefresh = true,
-                ExpiresUtc = DateTimeOffset.UtcNow.AddMinutes(15)
+            var jwt = new JwtSecurityToken(
+                issuer: AuthOptions.ISSUER,
+                audience: AuthOptions.AUDIENCE,
+                claims: claims,
+                expires: DateTime.UtcNow.Add(TimeSpan.FromMinutes(15)),
+                signingCredentials: new SigningCredentials(AuthOptions.GetSymmetricSecurityKey(),
+                    SecurityAlgorithms.HmacSha256)
+            );
+
+            var jwtToken = new JwtSecurityTokenHandler().WriteToken(jwt);
+
+            return new AuthResultModel() {
+                AccessToken = jwtToken,
+                RefreshToken = null
             };
-
-            await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme,
-                new ClaimsPrincipal(claimsIdentity), authProperties);
-
-            return Ok();
-        }
-
-        /// <summary>
-        /// Logout user from system.
-        /// </summary>
-        /// <response code="200">Ok</response>
-        /// <response code="401">If user is not authorized</response>
-        [HttpGet(Name = "LogOut")]
-        [Authorize(AuthenticationSchemes = CookieAuthenticationDefaults.AuthenticationScheme)]
-        public async Task<ActionResult<string>> LogOut()
-        {
-            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-            return Ok();
         }
     }
 }
