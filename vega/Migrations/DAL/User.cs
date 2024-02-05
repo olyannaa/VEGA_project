@@ -1,4 +1,5 @@
-﻿
+﻿using System;
+using System.Collections.Generic;
 
 namespace vega;
 
@@ -9,4 +10,8 @@ public partial class User
     public string? Login { get; set; }
 
     public string? Password { get; set; }
+
+    public virtual AreaUser? AreasUser { get; set; }
+
+    public virtual RoleUser? RoleUser { get; set; }
 }

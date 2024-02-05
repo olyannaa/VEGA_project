@@ -1,9 +1,8 @@
-using System;
-using System.IdentityModel.Tokens.Jwt;
+
 using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.EntityFrameworkCore;
+using System.IdentityModel.Tokens.Jwt;
 using Microsoft.IdentityModel.Tokens;
 using vega.Logic;
 
@@ -13,10 +12,10 @@ namespace vega.Controllers
     [Route("api/[controller]")]
     public class AuthController : ControllerBase
     {
-        private readonly ILogger<VegaUserController> _logger;
+        private readonly ILogger<AuthController > _logger;
         private readonly VegaContext _db;
 
-        public AuthController(ILogger<VegaUserController> logger, VegaContext context)
+        public AuthController(ILogger<AuthController> logger, VegaContext context)
         {
             _logger = logger;
             _db = context;
@@ -29,22 +28,22 @@ namespace vega.Controllers
         /// <response code="200">Returns JWT Token</response>
         /// <response code="400">If user is not registered in system or password is wrong</response>
         /// <response code="500">If Database does not store users role</response>
-        [HttpGet(Name = "Authorize")]
-        public async Task<ActionResult<string>> Get(string userLogin, string password)
+        [HttpPost(Name = "LoginIn")]
+        public async Task<ActionResult<AuthResultModel>> LogIn([FromBody] UserAuthModel userData)
         {
-            var user = await _db.Users.FirstOrDefaultAsync(user => user.Login == userLogin);
+            var user = await _db.Users.FirstOrDefaultAsync(user => user.Login == userData.Login);
 
-            if (user == null)
+            if (userData.Login == null || user == null)
             {
                 return BadRequest("User is not registered in system");
             }
-
-            if (user.Password != password)
+            
+            if (user.Password != userData.Password)
             {
                 return BadRequest("Wrong password");
             }
 
-            var userRole = await _db.UserRoles.FirstOrDefaultAsync(userRole => userRole.UserId == user.Id);
+            var userRole = await _db.RoleUsers.FirstOrDefaultAsync(userRole => userRole.UserId == user.Id);
             var userRoleId = userRole?.RoleId;
             var role = (await _db.Roles.FirstOrDefaultAsync(role => role.Id == userRoleId))?.Role1;
             if (role == null)
@@ -52,7 +51,7 @@ namespace vega.Controllers
                 return StatusCode(500, "Database does not store users role");
             }
 
-            var claims = new List<Claim> {new Claim(ClaimTypes.Name, userLogin), new Claim(ClaimTypes.Role, role)};
+            var claims = new List<Claim> {new Claim("login", userData.Login), new Claim(ClaimTypes.Role, role)};
 
             var jwt = new JwtSecurityToken(
                 issuer: AuthOptions.ISSUER,
@@ -63,7 +62,12 @@ namespace vega.Controllers
                     SecurityAlgorithms.HmacSha256)
             );
 
-            return new JwtSecurityTokenHandler().WriteToken(jwt);
+            var jwtToken = new JwtSecurityTokenHandler().WriteToken(jwt);
+
+            return new AuthResultModel() {
+                AccessToken = jwtToken,
+                RefreshToken = null
+            };
         }
     }
 }
