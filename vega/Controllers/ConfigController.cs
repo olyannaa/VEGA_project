@@ -9,6 +9,7 @@ namespace vega.Controllers
     [ApiController]
     [Route("api/[controller]")]
     [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+    [AdminOnlyAccessFilter]
     public class ConfigController : ControllerBase
     {
         private readonly ILogger<ConfigController> _logger;
@@ -19,6 +20,11 @@ namespace vega.Controllers
             _db = context;
         }
 
+        /// <summary>
+        /// Adds new user into system.
+        /// </summary>
+        /// <response code="200">User is created</response>
+        /// <response code="400">Database issue due to request data</response>
         [HttpPost("user")]
         public ActionResult AddNewUser([FromBody] UserCreationModel userData)
         {
@@ -54,6 +60,10 @@ namespace vega.Controllers
             return Ok();
         }
 
+        /// <summary>
+        /// Gets company areas.
+        /// </summary>
+        /// <returns>Returns dictionary of areas</returns>
         [HttpGet("area")]
         public async Task<ActionResult<IDictionary<int, string?>>> GetAreasInfo()
         {
@@ -62,6 +72,10 @@ namespace vega.Controllers
                 .ToDictionaryAsync(area => area.Id, area => area.AreaName);
         }
 
+        /// <summary>
+        /// Gets company roles.
+        /// </summary>
+        /// <returns>Returns dictionary of roles</returns>
         [HttpGet("role")]
         public async Task<ActionResult<IDictionary<int, string?>>> GetRolesInfo()
         {

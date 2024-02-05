@@ -18,6 +18,11 @@ namespace vega.Controllers
             _db = context;
         }
 
+        /// <summary>
+        /// Gets authentificated user info.
+        /// </summary>
+        /// <response code="500">Some user information is not stated</response>
+        /// <returns>Returns dictoionary of user information</returns>
         [HttpGet]
         public ActionResult<IDictionary<string, object>> GetUserInfo()
         {
