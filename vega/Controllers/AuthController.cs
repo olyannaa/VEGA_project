@@ -12,10 +12,10 @@ namespace vega.Controllers
     [Route("api/[controller]")]
     public class AuthController : ControllerBase
     {
-        private readonly ILogger<VegaUserController> _logger;
+        private readonly ILogger<AuthController > _logger;
         private readonly VegaContext _db;
 
-        public AuthController(ILogger<VegaUserController> logger, VegaContext context)
+        public AuthController(ILogger<AuthController> logger, VegaContext context)
         {
             _logger = logger;
             _db = context;
