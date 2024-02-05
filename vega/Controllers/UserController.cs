@@ -24,16 +24,12 @@ namespace vega.Controllers
         /// <response code="500">Some user information is not stated</response>
         /// <returns>Returns dictoionary of user information</returns>
         [HttpGet]
-        public ActionResult<IDictionary<string, object>> GetUserInfo()
+        [DesiredUserInfoFilter(ClaimTypes.Role, "login")]
+        public ActionResult<IDictionary<string, object?>> GetUserInfo()
         {
             var login = HttpContext.User.Claims.FirstOrDefault(value => value.Type == "login")?.Value;
             var role = HttpContext.User.Claims.FirstOrDefault(value => value.Type == ClaimTypes.Role)?.Value;
-            if (login == null || role == null)
-            {
-                return StatusCode(500, "User information is not stated");
-            } 
-
-            return new Dictionary<string, object>{{"login", login}, {"role", role}};
+            return new Dictionary<string, object?>{{"login", login}, {"role", role}};
         }
     }
 }
