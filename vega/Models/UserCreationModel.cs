@@ -12,8 +12,8 @@ public class UserCreationModel
     public string? Name {get; set;}
 
     [Required]
-    public int RoleId {get; set;}
+    public int? RoleId {get; set;}
 
     [Required]
-    public int AreaId {get; set;}
+    public int? AreaId {get; set;}
 }

@@ -3,13 +3,13 @@ using System.Collections.Generic;
 
 namespace vega;
 
-public partial class AreaUser
+public partial class RoleUser
 {
     public int UserId { get; set; }
 
-    public int? AreaId { get; set; }
+    public int RoleId { get; set; }
 
-    public virtual Area? Area { get; set; }
+    public virtual Role Role { get; set; } = null!;
 
     public virtual User User { get; set; } = null!;
 }

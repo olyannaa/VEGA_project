@@ -32,7 +32,7 @@ namespace vega.Controllers
         }
 
         [HttpPost(Name = "AddVegaUsers")]
-        public ActionResult<List<User>> AddNewUser([FromBody] UserCreationModel userData)
+        public ActionResult AddNewUser([FromBody] UserCreationModel userData)
         {
             var login = HttpContext.User.Claims.FirstOrDefault(value => value.Type == "login")?.Value;
             var role = HttpContext.User.Claims.FirstOrDefault(value => value.Type == ClaimTypes.Role)?.Value;
@@ -40,17 +40,30 @@ namespace vega.Controllers
             {
                 return Forbid();
             } 
-            
-            var user = new User{Login = userData.Login, Password = userData.Password};
-            _db.Users.Add(user);
-            _db.SaveChanges();
-            var areaUser = new AreaUser{UserId = user.Id, AreaId = userData.AreaId};
-            _db.AreaUsers.Add(areaUser);
-            _db.SaveChanges();
-            var userRole = new UserRole{UserId = user.Id, RoleId = userData.RoleId};
-            _db.UserRoles.Add(userRole);
-            _db.SaveChanges();
-            return _db.Users.ToList();
+
+            using var transaction = _db.Database.BeginTransaction();
+            try
+            {
+                var user = new User{Login = userData.Login, Password = userData.Password};
+                _db.Users.Add(user);
+                _db.SaveChanges();
+
+                var areaUser = new AreaUser{UserId = user.Id, AreaId = userData.AreaId};
+                _db.AreaUsers.Add(areaUser);
+                _db.SaveChanges();
+
+                var userRole = new RoleUser{UserId = user.Id, RoleId = userData.RoleId ?? default};
+                _db.RoleUsers.Add(userRole);
+                _db.SaveChanges();
+
+                transaction.Commit();
+            }
+            catch(Exception)
+            {
+                transaction.Rollback();
+                return BadRequest();
+            }
+            return Ok();
         }
     }
 }

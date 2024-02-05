@@ -1,20 +1,11 @@
-﻿
+﻿using System;
+using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 
 namespace vega;
 
 public partial class VegaContext : DbContext
 {
-    public virtual DbSet<Role> Roles { get; set; }
-
-    public virtual DbSet<User> Users { get; set; }
-
-    public virtual DbSet<UserRole> UserRoles {get; set; }
-
-    public virtual DbSet<AreaUser> AreaUsers {get; set; }
-
-    public virtual DbSet<Area> Areas {get; set; }
-    
     public VegaContext()
     {
     }
@@ -24,15 +15,57 @@ public partial class VegaContext : DbContext
     {
     }
 
+    public virtual DbSet<Area> Areas { get; set; }
+
+    public virtual DbSet<AreaUser> AreaUsers { get; set; }
+
+    public virtual DbSet<Role> Roles { get; set; }
+
+    public virtual DbSet<RoleUser> RoleUsers { get; set; }
+
+    public virtual DbSet<User> Users { get; set; }
+
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         optionsBuilder.LogTo(Console.WriteLine);
     }
 
-
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.HasPostgresExtension("pgcrypto");
+
+        modelBuilder.Entity<Area>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("areas_pkey");
+
+            entity.ToTable("areas");
+
+            entity.Property(e => e.Id)
+                .ValueGeneratedNever()
+                .HasColumnName("id");
+            entity.Property(e => e.AreaName).HasColumnName("area_name");
+        });
+
+        modelBuilder.Entity<AreaUser>(entity =>
+        {
+            entity.HasKey(e => e.UserId).HasName("areas_users_pk");
+
+            entity.ToTable("areas_users");
+
+            entity.Property(e => e.UserId)
+                .ValueGeneratedNever()
+                .HasColumnName("user_id");
+            entity.Property(e => e.AreaId).HasColumnName("area_id");
+
+            entity.HasOne(d => d.Area).WithMany(p => p.AreasUsers)
+                .HasForeignKey(d => d.AreaId)
+                .HasConstraintName("areas_users_area_id_fkey");
+
+            entity.HasOne(d => d.User).WithOne(p => p.AreasUser)
+                .HasForeignKey<AreaUser>(d => d.UserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("areas_users_user_id_fkey");
+        });
 
         modelBuilder.Entity<Role>(entity =>
         {
@@ -46,58 +79,41 @@ public partial class VegaContext : DbContext
                 .HasColumnName("role");
         });
 
+        modelBuilder.Entity<RoleUser>(entity =>
+        {
+            entity.HasKey(e => e.UserId).HasName("role_user_pk");
+
+            entity.ToTable("role_user");
+
+            entity.Property(e => e.UserId)
+                .ValueGeneratedNever()
+                .HasColumnName("user_id");
+            entity.Property(e => e.RoleId).HasColumnName("role_id");
+
+            entity.HasOne(d => d.Role).WithMany(p => p.RoleUsers)
+                .HasForeignKey(d => d.RoleId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("role_user_role_id_fkey");
+
+            entity.HasOne(d => d.User).WithOne(p => p.RoleUser)
+                .HasForeignKey<RoleUser>(d => d.UserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("role_user_user_id_fkey");
+        });
+
         modelBuilder.Entity<User>(entity =>
         {
-            entity
-                .HasKey(e => e.Id);
-            
+            entity.HasKey(e => e.Id).HasName("id");
+
             entity.ToTable("vega_users");
 
-            entity.Property(e => e.Id)
-                .ValueGeneratedOnAdd()
-                .HasColumnName("id");
+            entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.Login)
                 .HasMaxLength(20)
                 .HasColumnName("login");
             entity.Property(e => e.Password)
                 .HasMaxLength(100)
                 .HasColumnName("password");
-        });
-
-        modelBuilder.Entity<UserRole>(entity =>
-        {
-            entity.HasKey(e => e.UserId);
-            
-            entity.ToTable("role_user");
-
-            entity.Property(e => e.UserId)
-                .HasColumnName("user_id");
-            entity.Property(e => e.RoleId)
-                .HasColumnName("role_id");
-        });
-
-        OnModelCreatingPartial(modelBuilder);
-
-        modelBuilder.Entity<AreaUser>(entity =>
-        {
-            entity.HasKey(e => e.UserId);
-            
-            entity.ToTable("areas_users");
-
-            entity.Property(e => e.UserId)
-                .HasColumnName("user_id");
-            entity.Property(e => e.AreaId)
-                .HasColumnName("area_id");
-        });
-
-        modelBuilder.Entity<Area>(entity =>
-        {
-            entity
-                .HasNoKey()
-                .ToTable("areas");
-
-            entity.Property(e => e.Id).HasColumnName("id");
-            entity.Property(e => e.AreaName).HasColumnName("area_name");
         });
 
         OnModelCreatingPartial(modelBuilder);

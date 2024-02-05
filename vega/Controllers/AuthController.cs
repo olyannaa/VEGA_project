@@ -43,7 +43,7 @@ namespace vega.Controllers
                 return BadRequest("Wrong password");
             }
 
-            var userRole = await _db.UserRoles.FirstOrDefaultAsync(userRole => userRole.UserId == user.Id);
+            var userRole = await _db.RoleUsers.FirstOrDefaultAsync(userRole => userRole.UserId == user.Id);
             var userRoleId = userRole?.RoleId;
             var role = (await _db.Roles.FirstOrDefaultAsync(role => role.Id == userRoleId))?.Role1;
             if (role == null)
