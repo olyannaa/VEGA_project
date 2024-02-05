@@ -2,36 +2,24 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
 
 namespace vega.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
     [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
-    public class VegaUsersController : ControllerBase
+    public class ConfigController : ControllerBase
     {
-        private readonly ILogger<VegaUsersController> _logger;
+        private readonly ILogger<ConfigController> _logger;
         private readonly VegaContext _db;
-        public VegaUsersController(ILogger<VegaUsersController> logger, VegaContext context)
+        public ConfigController(ILogger<ConfigController> logger, VegaContext context)
         {
             _logger = logger;
             _db = context;
         }
 
-        [HttpGet(Name = "GetVegaUsers")]
-        public ActionResult<IDictionary<string, object>> GetUserInfo()
-        {
-            var login = HttpContext.User.Claims.FirstOrDefault(value => value.Type == ClaimTypes.Name)?.Value;
-            var role = HttpContext.User.Claims.FirstOrDefault(value => value.Type == ClaimTypes.Role)?.Value;
-            if (login == null || role == null)
-            {
-                return StatusCode(500, "User information is not stated");
-            } 
-
-            return new Dictionary<string, object>{{"login", login}, {"role", role}};
-        }
-
-        [HttpPost(Name = "AddVegaUsers")]
+        [HttpPost("user")]
         public ActionResult AddNewUser([FromBody] UserCreationModel userData)
         {
             var login = HttpContext.User.Claims.FirstOrDefault(value => value.Type == "login")?.Value;
@@ -64,6 +52,22 @@ namespace vega.Controllers
                 return BadRequest();
             }
             return Ok();
+        }
+
+        [HttpGet("area")]
+        public async Task<ActionResult<IDictionary<int, string?>>> GetAreasInfo()
+        {
+            return await _db.Areas
+                .Select(area => new {area.Id, area.AreaName})
+                .ToDictionaryAsync(area => area.Id, area => area.AreaName);
+        }
+
+        [HttpGet("role")]
+        public async Task<ActionResult<IDictionary<int, string?>>> GetRolesInfo()
+        {
+            return await _db.Roles
+                .Select(area => new {area.Id, area.Role1})
+                .ToDictionaryAsync(area => area.Id, area => area.Role1);
         }
     }
 }
