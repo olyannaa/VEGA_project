@@ -29,7 +29,13 @@ namespace vega.Controllers
         {
             var login = HttpContext.User.Claims.FirstOrDefault(value => value.Type == "login")?.Value;
             var role = HttpContext.User.Claims.FirstOrDefault(value => value.Type == ClaimTypes.Role)?.Value;
-            return new Dictionary<string, object?>{{"login", login}, {"role", role}};
+            var name = HttpContext.User.Claims.FirstOrDefault(value => value.Type == ClaimTypes.Name)?.Value;
+            
+            return new Dictionary<string, object?>{
+                {"login", login},
+                {"role", role},
+                {"name", name}
+            };
         }
     }
 }

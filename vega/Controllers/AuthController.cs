@@ -33,7 +33,7 @@ namespace vega.Controllers
         {
             var user = await _db.Users.FirstOrDefaultAsync(user => user.Login == userData.Login);
 
-            if (userData.Login == null || user == null)
+            if (user == null || user.Login == null)
             {
                 return BadRequest("User is not registered in system");
             }
@@ -51,7 +51,15 @@ namespace vega.Controllers
                 return StatusCode(500, "Database does not store users role");
             }
 
-            var claims = new List<Claim> {new Claim("login", userData.Login), new Claim(ClaimTypes.Role, role)};
+            var claims = new List<Claim> {
+                new Claim("login", user.Login),
+                new Claim(ClaimTypes.Role, role),   
+            };
+
+            if (user.FullName != null)
+            {
+                claims.Add(new Claim(ClaimTypes.Name, user.FullName));
+            }
 
             var jwt = new JwtSecurityToken(
                 issuer: AuthOptions.ISSUER,
