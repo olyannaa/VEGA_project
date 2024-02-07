@@ -32,7 +32,7 @@ namespace vega.Controllers
             using var transaction = _db.Database.BeginTransaction();
             try
             {
-                var user = new User{Login = userData.Login, Password = userData.Password, FullName = userData.Name};
+                var user = new User{Login = userData.Login, Password = Hasher.HashMD5(userData.Password), FullName = userData.Name};
                 _db.Users.Add(user);
                 _db.SaveChanges();
 
