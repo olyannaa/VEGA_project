@@ -114,6 +114,8 @@ public partial class VegaContext : DbContext
             entity.Property(e => e.Password)
                 .HasMaxLength(100)
                 .HasColumnName("password");
+            entity.Property(e => e.FullName)
+                .HasColumnName("full_name");
         });
 
         OnModelCreatingPartial(modelBuilder);

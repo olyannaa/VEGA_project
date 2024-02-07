@@ -26,19 +26,13 @@ namespace vega.Controllers
         /// <response code="200">User is created</response>
         /// <response code="400">Database issue due to request data</response>
         [HttpPost("user")]
+        [DesiredUserInfoFilter(ClaimTypes.Role, "login")]
         public ActionResult AddNewUser([FromBody] UserCreationModel userData)
         {
-            var login = HttpContext.User.Claims.FirstOrDefault(value => value.Type == "login")?.Value;
-            var role = HttpContext.User.Claims.FirstOrDefault(value => value.Type == ClaimTypes.Role)?.Value;
-            if (role == null || role != Roles.Admin)
-            {
-                return Forbid();
-            } 
-
             using var transaction = _db.Database.BeginTransaction();
             try
             {
-                var user = new User{Login = userData.Login, Password = userData.Password};
+                var user = new User{Login = userData.Login, Password = userData.Password, FullName = userData.Name};
                 _db.Users.Add(user);
                 _db.SaveChanges();
 
