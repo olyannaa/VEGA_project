@@ -38,7 +38,7 @@ namespace vega.Controllers
                 return BadRequest("User is not registered in system");
             }
             
-            if (user.Password == null || user.Password != Hasher.DecodeMD5(userData.Password))
+            if (user.Password == null || user.Password != Hasher.HashMD5(userData.Password))
             {
                 return BadRequest("Wrong password");
             }
@@ -55,7 +55,6 @@ namespace vega.Controllers
                 new Claim("login", user.Login),
                 new Claim(ClaimTypes.Role, role),   
             };
-
             if (user.FullName != null)
             {
                 claims.Add(new Claim(ClaimTypes.Name, user.FullName));
