@@ -45,6 +45,8 @@ builder.Services.AddSwaggerGen(options =>
         options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, xmlFilename));
     });
 
+builder.Services.AddTransient<ITokenService, TokenService>();
+
 builder.Services.AddSingleton<IConfiguration>(builder.Configuration);
 
 builder.Services.AddDbContext<VegaContext>(options =>

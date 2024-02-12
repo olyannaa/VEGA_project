@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 
 namespace vega.Controllers
 {
@@ -29,22 +30,60 @@ namespace vega.Controllers
         [DesiredUserInfoFilter(ClaimTypes.Role, "login")]
         public ActionResult AddNewUser([FromBody] UserCreationModel userData)
         {
+            using (var transaction = _db.Database.BeginTransaction())
+            {
+                try
+                {
+                    var user = new User{Login = userData.Login, Password = Hasher.HashMD5(userData.Password), FullName = userData.Name};
+                    _db.Users.Add(user);
+                    _db.SaveChanges();
+
+                    var areaUser = new AreaUser{UserId = user.Id, AreaId = userData.AreaId};
+                    _db.AreaUsers.Add(areaUser);
+                    _db.SaveChanges();
+
+                    var userRole = new RoleUser{UserId = user.Id, RoleId = userData.RoleId ?? default};
+                    _db.RoleUsers.Add(userRole);
+                    _db.SaveChanges();
+
+                    transaction.Commit();
+
+                }
+                catch(Exception)
+                {
+                    transaction.Rollback();
+                    return BadRequest();
+                }
+
+                return Ok();
+            }
+        }
+
+        /// <summary>
+        /// Updates user information.
+        /// </summary>
+        [HttpPatch("user")]
+        [DesiredUserInfoFilter("login")]
+        public ActionResult UpdateUser([FromBody] UserUpdateModel updateData)
+        {
+            var login = HttpContext.User.Claims.FirstOrDefault(value => value.Type == "login")?.Value;
             using var transaction = _db.Database.BeginTransaction();
             try
             {
-                var user = new User{Login = userData.Login, Password = Hasher.HashMD5(userData.Password), FullName = userData.Name};
-                _db.Users.Add(user);
+                var user = _db.Users.First(value => value.Login == login);
+                if (updateData.Login != null)
+                {
+                   user.Login = updateData.Login;
+                }
+                if (updateData.Password!= null)
+                {
+                    user.Password = Hasher.HashMD5(updateData.Password);
+                }
+                if (updateData.Name != null)
+                {
+                    user.FullName = updateData.Name;
+                }
                 _db.SaveChanges();
-
-                var areaUser = new AreaUser{UserId = user.Id, AreaId = userData.AreaId};
-                _db.AreaUsers.Add(areaUser);
-                _db.SaveChanges();
-
-                var userRole = new RoleUser{UserId = user.Id, RoleId = userData.RoleId ?? default};
-                _db.RoleUsers.Add(userRole);
-                _db.SaveChanges();
-
-                transaction.Commit();
             }
             catch(Exception)
             {

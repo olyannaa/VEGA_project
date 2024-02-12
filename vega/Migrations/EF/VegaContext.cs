@@ -23,6 +23,8 @@ public partial class VegaContext : DbContext
 
     public virtual DbSet<RoleUser> RoleUsers { get; set; }
 
+    public virtual DbSet<UserToken> UserTokens { get; set; }
+
     public virtual DbSet<User> Users { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
@@ -116,6 +118,19 @@ public partial class VegaContext : DbContext
                 .HasColumnName("password");
             entity.Property(e => e.FullName)
                 .HasColumnName("full_name");
+        });
+
+        modelBuilder.Entity<UserToken>(entity =>
+        {
+            entity.HasKey(e => e.UserId).HasName("token_user_pk");
+
+            entity.ToTable("token_user");
+
+            entity.Property(e => e.UserId).HasColumnName("user_id");
+            entity.Property(e => e.RefreshToken)
+                .HasColumnName("refresh_token");
+            entity.Property(e => e.ExpireTime)
+                .HasColumnName("refresh_expire_time");
         });
 
         OnModelCreatingPartial(modelBuilder);
