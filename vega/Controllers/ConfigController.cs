@@ -24,7 +24,7 @@ namespace vega.Controllers
         }
 
         /// <summary>
-        /// Adds new user into system.
+        /// Adds new user into system
         /// </summary>
         /// <response code="200">User is created</response>
         /// <response code="400">Database issue due to request data</response>
@@ -62,8 +62,10 @@ namespace vega.Controllers
         }
 
         /// <summary>
-        /// Updates user information.
+        /// Updates user information
         /// </summary>
+        /// <response code="200">Changes are accepted</response>
+        /// <response code="400">Database issue most probably due to request data</response>
         [HttpPatch("user")]
         [DesiredUserInfoFilter("login")]
         public ActionResult UpdateUser([FromBody] UserUpdateModel updateData)
@@ -98,14 +100,6 @@ namespace vega.Controllers
             }
             return Ok();
         }
-
-        [HttpGet("test")]
-        public ActionResult Test()
-        {
-            _tokenManager.DeactivateCurrentToken();
-            return Ok();
-        }
-            
 
         /// <summary>
         /// Gets company areas.

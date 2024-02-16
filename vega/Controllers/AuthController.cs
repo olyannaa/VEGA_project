@@ -76,6 +76,13 @@ namespace vega.Controllers
             };
         }
 
+        /// <summary>
+        /// Refresh access token.
+        /// </summary>
+        /// <returns>Returns new access and refresh token</returns>
+        /// <response code="200">Returns JWT access and refresh</response>
+        /// <response code="400">If refresh is invalid</response>
+        /// <response code="403">If refresh token is expired</response>
         [HttpPost]
         [Route("refresh-token")]
         public async Task<IActionResult> Refresh([FromBody] TokenModel tokens)
