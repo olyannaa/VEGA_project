@@ -72,12 +72,13 @@ namespace vega.Controllers
             using var transaction = _db.Database.BeginTransaction();
             try
             {
-                var user = _db.Users.First(value => value.Login == login);
+                var user = _db.Users.SingleOrDefault(value => value.Login == login);
+                if (user == null) throw new Exception();
                 if (updateData.Login != null)
                 {
                    user.Login = updateData.Login;
                 }
-                if (updateData.Password!= null)
+                if (updateData.Password != null)
                 {
                     user.Password = Hasher.HashMD5(updateData.Password);
                 }
@@ -85,6 +86,7 @@ namespace vega.Controllers
                 {
                     user.FullName = updateData.Name;
                 }
+                transaction.Commit();
                 _db.SaveChanges();
 
                 _tokenManager.DeactivateCurrentToken();

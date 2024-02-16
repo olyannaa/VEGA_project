@@ -36,7 +36,7 @@ public class TokenManager : ITokenManager
 
     public (string, DateTime) GenerateRefreshToken()
     {
-        var time = DateTime.UtcNow.AddMinutes(1);
+        var time = DateTime.UtcNow.AddDays(1);
         var randomNumber = new byte[32];
         using (var rng = RandomNumberGenerator.Create())
         {
