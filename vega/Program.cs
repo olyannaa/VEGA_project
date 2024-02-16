@@ -6,6 +6,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using vega;
 using vega.Logic;
+using Microsoft.Extensions.Caching.Memory;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -45,9 +46,11 @@ builder.Services.AddSwaggerGen(options =>
         options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, xmlFilename));
     });
 
-builder.Services.AddTransient<ITokenService, TokenService>();
+builder.Services.AddTransient<ITokenManager, TokenManager>();
 
 builder.Services.AddSingleton<IConfiguration>(builder.Configuration);
+
+builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 
 builder.Services.AddDbContext<VegaContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("VegaDB")));
@@ -55,25 +58,24 @@ builder.Services.AddDbContext<VegaContext>(options =>
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options =>
     {
+        var lifetimeManager = new JwtTokenLifetimeManager();
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
-            ValidIssuer = AuthOptions.ISSUER,
+            ValidIssuer = JwtOptions.ISSUER,
 
             ValidateAudience = true,
-            ValidAudience = AuthOptions.AUDIENCE,
+            ValidAudience = JwtOptions.AUDIENCE,
 
             ValidateLifetime = true,
-            LifetimeValidator = (DateTime? notBefore, DateTime? expires, SecurityToken securityToken, 
-                                     TokenValidationParameters validationParameters) => {return expires > DateTime.UtcNow;},
+            LifetimeValidator = lifetimeManager.ValidateTokenLifetime,
 
             ValidateIssuerSigningKey = true,
-            IssuerSigningKey = AuthOptions.GetSymmetricSecurityKey(),
+            IssuerSigningKey = JwtOptions.GetSymmetricSecurityKey(),
         };
     });
 
 var app = builder.Build();
-
 app.UseCors(builder => 
     builder.WithOrigins("http://localhost:3000")
         .AllowAnyHeader()

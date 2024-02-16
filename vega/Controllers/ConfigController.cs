@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 
 namespace vega.Controllers
 {
@@ -15,10 +14,13 @@ namespace vega.Controllers
     {
         private readonly ILogger<ConfigController> _logger;
         private readonly VegaContext _db;
-        public ConfigController(ILogger<ConfigController> logger, VegaContext context)
+        private readonly ITokenManager _tokenManager;
+
+        public ConfigController(ILogger<ConfigController> logger, VegaContext context, ITokenManager tokenManager)
         {
             _logger = logger;
             _db = context;
+            _tokenManager = tokenManager;
         }
 
         /// <summary>
@@ -84,6 +86,8 @@ namespace vega.Controllers
                     user.FullName = updateData.Name;
                 }
                 _db.SaveChanges();
+
+                _tokenManager.DeactivateCurrentToken();
             }
             catch(Exception)
             {
@@ -92,6 +96,14 @@ namespace vega.Controllers
             }
             return Ok();
         }
+
+        [HttpGet("test")]
+        public ActionResult Test()
+        {
+            _tokenManager.DeactivateCurrentToken();
+            return Ok();
+        }
+            
 
         /// <summary>
         /// Gets company areas.

@@ -2,9 +2,6 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.IdentityModel.Tokens.Jwt;
-using Microsoft.IdentityModel.Tokens;
-using vega.Logic;
 
 namespace vega.Controllers
 {
@@ -14,9 +11,9 @@ namespace vega.Controllers
     {
         private readonly ILogger<AuthController > _logger;
         private readonly VegaContext _db;
-        private readonly ITokenService _tokenService;
+        private readonly ITokenManager _tokenService;
 
-        public AuthController(ILogger<AuthController> logger, VegaContext context, ITokenService tokenService)
+        public AuthController(ILogger<AuthController> logger, VegaContext context, ITokenManager tokenService)
         {
             _logger = logger;
             _tokenService = tokenService;
@@ -60,16 +57,16 @@ namespace vega.Controllers
             }
 
             var accessToken = _tokenService.GenerateAccessToken(claims);
-            var refreshToken = _tokenService.GenerateRefreshToken();
+            var (refreshToken, expireTime) = _tokenService.GenerateRefreshToken();
             var userToken = _db.UserTokens.SingleOrDefault(token => token.UserId == user.Id);
             if (userToken == null)
             {
-                _db.Add(new UserToken(){UserId = user.Id, RefreshToken = refreshToken, ExpireTime = DateTime.UtcNow.AddDays(1)});
+                _db.Add(new UserToken(){UserId = user.Id, RefreshToken = refreshToken, ExpireTime = expireTime});
             }
             else
             {
                 userToken.RefreshToken = refreshToken;
-                userToken.ExpireTime = DateTime.UtcNow.AddDays(1);
+                userToken.ExpireTime = expireTime;
             }
             _db.SaveChanges();
 
@@ -80,7 +77,7 @@ namespace vega.Controllers
         }
 
         [HttpPost]
-        [Route("refresh_token")]
+        [Route("refresh-token")]
         public async Task<IActionResult> Refresh([FromBody] TokenModel tokens)
         {
             var accessToken = tokens.AccessToken;
@@ -94,15 +91,22 @@ namespace vega.Controllers
                 throw new InvalidCastException();
             }
             
-            var user = await _db.Users.SingleOrDefaultAsync(user => user.Id == id);
             var dbTokens = await _db.UserTokens.SingleOrDefaultAsync(tokens => tokens.UserId == id);
-            if (user is null || dbTokens is null || dbTokens.RefreshToken != refreshToken)
-                return BadRequest("Invalid client request");
+            if (dbTokens is null || dbTokens.RefreshToken != refreshToken)
+            {    
+                return BadRequest("Invalid refresh token");
+            }
 
+            if (dbTokens.ExpireTime < DateTime.UtcNow)
+            {
+                return Forbid();
+            }
             var newAccessToken = _tokenService.GenerateAccessToken(principal.Claims);
-            var newRefreshToken = _tokenService.GenerateRefreshToken();
-
+            var (newRefreshToken, newExpireTime) = _tokenService.GenerateRefreshToken();
+            _tokenService.DeactivateToken(accessToken);
+            
             dbTokens.RefreshToken = newRefreshToken;
+            dbTokens.ExpireTime = newExpireTime;
             _db.SaveChanges();
 
             return Ok(new TokenModel()
