@@ -8,11 +8,11 @@ namespace vega.Controllers
     [ApiController]
     [Route("api/[controller]")]
     [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
-    public class UserController : ControllerBase
+    public class UsersController : ControllerBase
     {
-        private readonly ILogger<UserController> _logger;
+        private readonly ILogger<UsersController> _logger;
         private readonly VegaContext _db;
-        public UserController(ILogger<UserController> logger, VegaContext context)
+        public UsersController(ILogger<UsersController> logger, VegaContext context)
         {
             _logger = logger;
             _db = context;
