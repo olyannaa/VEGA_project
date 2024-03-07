@@ -1,4 +1,5 @@
 
+using System.Data.Common;
 using Microsoft.AspNetCore.Mvc;
 using Minio;
 using Minio.DataModel.Args;
@@ -21,21 +22,67 @@ namespace vega.Controllers
         }
 
         [HttpPost("upload")]
-        public async Task<ActionResult> AddNewFile(IFormFileCollection files, [FromForm] OrderCreatingModel order)
+        public async Task<ActionResult> CreateNewOrder(IFormFileCollection files, [FromForm] OrderModel order)
         {
-            var date = DateTime.UtcNow.Date;
-            foreach (IFormFile file in files)
+            if (order.Role == null || _db.KKSFiles.Where(e => e.KKSId == order.OrderKKS).FirstOrDefault() != null)
             {
-                _db.Add<KKSFile>(new KKSFile(){ 
-                    KKSId = order.OrderKKS,
-                    FileName = file.FileName,
-                    UploadDate = date, 
-                    Status = false 
-                });
+                return BadRequest();
             }
-            _db.SaveChanges();
-            await _storageManager.CreateOrderAsync(files, order.Description, order.OrderKKS);
-            return Ok(order.OrderKKS);
+
+            var date = DateTime.UtcNow.Date;
+            using var transaction = _db.Database.BeginTransaction();
+            try
+            {
+                foreach (IFormFile file in files)
+                {
+                    _db.Add(new KKSFile(){ 
+                        KKSId = order.OrderKKS,
+                        FileName = $"{order.OrderKKS}/{order.Role}/{file.FileName}",
+                        UploadDate = date, 
+                        Status = false 
+                    });
+                }
+                transaction.Commit();
+                _db.SaveChanges();
+            }
+            catch (Exception)
+            {
+                transaction.Rollback();
+                return BadRequest();
+            }
+
+            await _storageManager.CreateOrderAsync(files, order);
+            return Ok();
+        }
+
+        [HttpDelete("delete")]
+        public async Task<ActionResult> DeleteCompleteOrder([FromForm] OrderModel order)
+        {
+            var files = _db.KKSFiles.Where(e => e.KKSId == order.OrderKKS).ToList();
+            var fileNames = files.Select(e => e.FileName).ToList();
+            if (!fileNames.Any())
+            {
+                return Ok();
+            }
+            fileNames.Add($"{order.OrderKKS}/meta.txt");
+            using var transaction = _db.Database.BeginTransaction();
+            try
+            {
+                foreach (var file in files)
+                {
+                    _db.Remove(file);
+                }
+                _db.SaveChanges();
+                transaction.Commit();
+            }
+            catch (Exception)
+            {
+                transaction.Rollback();
+                return BadRequest();
+            }
+
+            await _storageManager.DeleteOrderAsync(order.OrderKKS, fileNames);
+            return Ok(fileNames.Count);
         }
     }
 }

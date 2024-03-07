@@ -1,6 +1,8 @@
 using System.IO.Pipelines;
+using System.Net.Http.Headers;
 using Minio;
 using Minio.DataModel.Args;
+using vega;
 public class StorageManager : IStorageManager
 {
     private readonly IMinioClient _minioClient;
@@ -13,26 +15,34 @@ public class StorageManager : IStorageManager
                                         .Build();
     }
 
-    public async Task CreateOrderAsync(IFormFileCollection files, string? description, string? orderKKS)
-    {
-        if (orderKKS == null)
+    public async Task CreateOrderAsync(IFormFileCollection files, OrderModel order)
+    { 
+        if (order.OrderKKS == null)
         {
             throw new NullReferenceException();
         }
         foreach (IFormFile file in files)
         {
             var fileStream = file.OpenReadStream();
-            await UploadFileAsync(fileStream, orderKKS, file.ContentType, file.FileName);
+            await UploadFileAsync(fileStream, order.OrderKKS, file.ContentType, file.FileName, order.Role);
         }
 
-        if (description != null)
-        {
-            await InitMetaAsync(description, orderKKS);
-        }  
+        await InitMetaAsync(order.Description, order.OrderKKS);
     }
 
-    
-    private async Task InitMetaAsync(string description, string orderKKS, string meta = "meta.txt")
+    public async Task DeleteOrderAsync(string? orderKKS, List<string> fileNames)
+    {
+        if (orderKKS == null)
+        {
+            throw new NullReferenceException();
+        }
+        var removeArgs = new RemoveObjectsArgs()
+            .WithBucket("vega-orders-bucket")
+            .WithObjects(fileNames);
+        await _minioClient.RemoveObjectsAsync(removeArgs).ConfigureAwait(false);
+    }
+
+    private async Task InitMetaAsync(string? description, string orderKKS, string meta = "meta.txt")
     {
         var filePath = Path.Combine(Path.GetTempPath(), meta);
 
@@ -47,11 +57,12 @@ public class StorageManager : IStorageManager
             File.Delete(filePath);
     }
 
-    private async Task UploadFileAsync(Stream fileStream, string directory, string contentType, string name)
+    private async Task UploadFileAsync(Stream fileStream, string directory, string contentType, string name, string? role = null)
     {
+        var updRole = role != null ? role + '/' : null;
         var putObjectArgs = new PutObjectArgs()
-            .WithBucket("vega-bucket")
-            .WithObject($"{directory}/{name}")
+            .WithBucket("vega-orders-bucket")
+            .WithObject($"{directory}/{updRole}{name}")
             .WithStreamData(fileStream)
             .WithObjectSize(fileStream.Length)
             .WithContentType(contentType);

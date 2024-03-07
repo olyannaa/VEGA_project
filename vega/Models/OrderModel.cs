@@ -1,9 +1,9 @@
 using System.ComponentModel.DataAnnotations;
 
-public class OrderCreatingModel
+public class OrderModel
 {
     [Required]
     public string? OrderKKS {get; set;}
-    [Required]
     public string? Description {get; set;}
+    public string? Role { get; set;}
 }
