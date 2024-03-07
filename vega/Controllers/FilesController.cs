@@ -23,6 +23,17 @@ namespace vega.Controllers
         [HttpPost("upload")]
         public async Task<ActionResult> AddNewFile(IFormFileCollection files, [FromForm] OrderCreatingModel order)
         {
+            var date = DateTime.UtcNow.Date;
+            foreach (IFormFile file in files)
+            {
+                _db.Add<KKSFile>(new KKSFile(){ 
+                    KKSId = order.OrderKKS,
+                    FileName = file.FileName,
+                    UploadDate = date, 
+                    Status = false 
+                });
+            }
+            _db.SaveChanges();
             await _storageManager.CreateOrderAsync(files, order.Description, order.OrderKKS);
             return Ok(order.OrderKKS);
         }

@@ -27,6 +27,10 @@ public partial class VegaContext : DbContext
 
     public virtual DbSet<User> Users { get; set; }
 
+    public virtual DbSet<KKSFile> KKSFiles { get; set; }
+
+    public virtual DbSet<KKSEmployee> KKSEmployees { get; set; }
+
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         optionsBuilder.LogTo(Console.WriteLine);
@@ -131,6 +135,31 @@ public partial class VegaContext : DbContext
                 .HasColumnName("refresh_token");
             entity.Property(e => e.ExpireTime)
                 .HasColumnName("refresh_expire_time");
+        });
+
+        modelBuilder.Entity<KKSFile>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("kks_files_pk");
+
+            entity.ToTable("kks_files");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.KKSId).HasColumnName("kks_id");
+            entity.Property(e => e.FileName).HasColumnName("file_name");
+            entity.Property(e => e.UploadDate).HasColumnName("upload_date");
+            entity.Property(e => e.Status).HasColumnName("status");
+        });
+
+        modelBuilder.Entity<KKSEmployee>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("kks_employees_pk");
+
+            entity.ToTable("kks_employees");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.KKSId).HasColumnName("kks_id");
+            entity.Property(e => e.Role).HasColumnName("role");
+            entity.Property(e => e.UserId).HasColumnName("user_id");
         });
 
         OnModelCreatingPartial(modelBuilder);
