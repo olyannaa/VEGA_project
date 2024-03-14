@@ -15,19 +15,19 @@ public class StorageManager : IStorageManager
                                         .Build();
     }
 
-    public async Task CreateOrderAsync(IFormFileCollection files, OrderModel order)
+    public async Task CreateOrderAsync(IFormFileCollection files, string kks, string? description, string? role)
     { 
-        if (order.OrderKKS == null)
+        if (kks == null)
         {
             throw new NullReferenceException();
         }
         foreach (IFormFile file in files)
         {
             var fileStream = file.OpenReadStream();
-            await UploadFileAsync(fileStream, order.OrderKKS, file.ContentType, file.FileName, order.Role);
+            await UploadFileAsync(fileStream, kks, file.ContentType, file.FileName, role);
         }
 
-        await InitMetaAsync(order.Description, order.OrderKKS);
+        await InitMetaAsync(description, kks, role);
     }
 
     public async Task DeleteOrderAsync(string? orderKKS, List<string> fileNames)
@@ -42,7 +42,7 @@ public class StorageManager : IStorageManager
         await _minioClient.RemoveObjectsAsync(removeArgs).ConfigureAwait(false);
     }
 
-    private async Task InitMetaAsync(string? description, string orderKKS, string meta = "meta.txt")
+    private async Task InitMetaAsync(string? description, string orderKKS, string? role, string meta = "meta.txt")
     {
         var filePath = Path.Combine(Path.GetTempPath(), meta);
 
@@ -52,12 +52,12 @@ public class StorageManager : IStorageManager
                 sw.Close();
             }
             var fileStream = new FileStream(filePath, FileMode.Open);
-            await UploadFileAsync(fileStream, orderKKS, "text/txt", meta);
+            await UploadFileAsync(fileStream, orderKKS, "text/txt", meta, role);
             fileStream.Close();
             File.Delete(filePath);
     }
 
-    private async Task UploadFileAsync(Stream fileStream, string directory, string contentType, string name, string? role = null)
+    public async Task UploadFileAsync(Stream fileStream, string directory, string contentType, string name, string? role = null)
     {
         var updRole = role != null ? role + '/' : null;
         var putObjectArgs = new PutObjectArgs()

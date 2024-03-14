@@ -24,7 +24,7 @@ namespace vega.Controllers
         [HttpPost("upload")]
         public async Task<ActionResult> CreateNewOrder(IFormFileCollection files, [FromForm] OrderModel order)
         {
-            if (order.Role == null || _db.KKSFiles.Where(e => e.KKSId == order.OrderKKS).FirstOrDefault() != null)
+            if (order.OrderKKS == null || _db.KKSFiles.Where(e => e.KKSId == order.OrderKKS).FirstOrDefault() != null)
             {
                 return BadRequest();
             }
@@ -37,7 +37,7 @@ namespace vega.Controllers
                 {
                     _db.Add(new KKSFile(){ 
                         KKSId = order.OrderKKS,
-                        FileName = $"{order.OrderKKS}/{order.Role}/{file.FileName}",
+                        FileName = $"{order.OrderKKS}/{Roles.Documentation}/{file.FileName}",
                         UploadDate = date, 
                         Status = false 
                     });
@@ -51,7 +51,7 @@ namespace vega.Controllers
                 return BadRequest();
             }
 
-            await _storageManager.CreateOrderAsync(files, order);
+            await _storageManager.CreateOrderAsync(files, order.OrderKKS, order.Description, Roles.Documentation);
             return Ok();
         }
 
