@@ -1,10 +1,10 @@
 public static class Roles
 {
-    public const string Admin = "admin";
+    public const string Admin = "Администратор";
 
-    public const string Worker = "worker";
+    public const string Worker = "Рабочий";
 
-    public const string STK = "stk";
+    public const string STK = "СТК";
 
-    public const string Storage = "storage";
+    public const string Storage = "Склад";
 }

@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.DataProtection.KeyManagement.Internal;
 
 public class UserCreationModel
 {
@@ -12,7 +13,7 @@ public class UserCreationModel
     public string? Name {get; set;}
 
     [Required]
-    public int? RoleId {get; set;}
+    public int[]? RoleIds {get; set;}
 
     [Required]
     public int? AreaId {get; set;}

@@ -29,9 +29,14 @@ namespace vega.Controllers
         /// <response code="200">User is created</response>
         /// <response code="400">Database issue due to request data</response>
         [HttpPost("user")]
-        [DesiredUserInfoFilter(ClaimTypes.Role, "login")]
+        [DesiredUserInfoFilter(ClaimTypes.Role, VegaClaimTypes.Login)]
         public ActionResult AddNewUser([FromBody] UserCreationModel userData)
         {
+            if (userData.RoleIds == null)
+            {
+                return BadRequest();
+            }
+            
             using (var transaction = _db.Database.BeginTransaction())
             {
                 try
@@ -44,15 +49,19 @@ namespace vega.Controllers
                     _db.AreaUsers.Add(areaUser);
                     _db.SaveChanges();
 
-                    var userRole = new RoleUser{UserId = user.Id, RoleId = userData.RoleId ?? default};
-                    _db.RoleUsers.Add(userRole);
-                    _db.SaveChanges();
-
+                    foreach (var roleId in userData.RoleIds)
+                    {
+                        var userRole = new RoleUser{UserId = user.Id, RoleId = roleId};
+                        _db.RoleUsers.Add(userRole);
+                        _db.SaveChanges();
+                    }
+                    
                     transaction.Commit();
 
                 }
-                catch(Exception)
+                catch(Exception e)
                 {
+                    Console.WriteLine(e.Message);
                     transaction.Rollback();
                     return BadRequest();
                 }
@@ -67,10 +76,10 @@ namespace vega.Controllers
         /// <response code="200">Changes are accepted</response>
         /// <response code="400">Database issue most probably due to request data</response>
         [HttpPatch("user")]
-        [DesiredUserInfoFilter("login")]
+        [DesiredUserInfoFilter(VegaClaimTypes.Login)]
         public ActionResult UpdateUser([FromBody] UserUpdateModel updateData)
         {
-            var login = HttpContext.User.Claims.FirstOrDefault(value => value.Type == "login")?.Value;
+            var login = HttpContext.User.Claims.FirstOrDefault(value => value.Type == VegaClaimTypes.Login)?.Value;
             using var transaction = _db.Database.BeginTransaction();
             try
             {

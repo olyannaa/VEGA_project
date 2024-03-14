@@ -83,10 +83,12 @@ public partial class VegaContext : DbContext
 
         modelBuilder.Entity<RoleUser>(entity =>
         {
-            entity.HasKey(e => e.UserId).HasName("role_user_pk");
+            entity.HasKey(e => e.Id).HasName("role_user_pk");
 
             entity.ToTable("role_user");
 
+
+            entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.UserId)
                 .ValueGeneratedNever()
                 .HasColumnName("user_id");
@@ -97,8 +99,8 @@ public partial class VegaContext : DbContext
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("role_user_role_id_fkey");
 
-            entity.HasOne(d => d.User).WithOne(p => p.RoleUser)
-                .HasForeignKey<RoleUser>(d => d.UserId)
+            entity.HasOne(d => d.User).WithMany(p => p.RoleUsers)
+                .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("role_user_user_id_fkey");
         });
