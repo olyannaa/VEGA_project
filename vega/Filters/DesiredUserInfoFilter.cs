@@ -19,6 +19,10 @@ public class DesiredUserInfoFilter : Attribute, IActionFilter
 
     public void OnActionExecuted(ActionExecutedContext context)
     {
+    }
+
+    public void OnActionExecuting(ActionExecutingContext context)
+    {
         if (_qualities != null)
         {
             var resultStr = new StringBuilder();
@@ -27,7 +31,7 @@ public class DesiredUserInfoFilter : Attribute, IActionFilter
                 var value = context.HttpContext.User.Claims.FirstOrDefault(value => value.Type == ClaimTypes.Role)?.Value;
                 if (value == null)
                 {
-                    resultStr.Append(string.Format("{0} info is not provided", quality));
+                    resultStr.Append($"{quality} info is not provided\n");
                 }
             }
             if (resultStr.Length != 0)
@@ -35,9 +39,5 @@ public class DesiredUserInfoFilter : Attribute, IActionFilter
                 context.Result = new NotFoundObjectResult(resultStr.ToString());
             }
         }
-    }
-
-    public void OnActionExecuting(ActionExecutingContext context)
-    {
     }
 }

@@ -24,16 +24,16 @@ namespace vega.Controllers
         /// <response code="500">Some user information is not stated</response>
         /// <returns>Returns dictoionary of user information</returns>
         [HttpGet]
-        [DesiredUserInfoFilter(ClaimTypes.Role, "login")]
+        [DesiredUserInfoFilter(ClaimTypes.Role, VegaClaimTypes.Login)]
         public ActionResult<IDictionary<string, object?>> GetUserInfo()
         {
-            var login = HttpContext.User.Claims.FirstOrDefault(value => value.Type == "login")?.Value;
-            var role = HttpContext.User.Claims.FirstOrDefault(value => value.Type == ClaimTypes.Role)?.Value;
+            var login = HttpContext.User.Claims.FirstOrDefault(value => value.Type == VegaClaimTypes.Login)?.Value;
+            var roles = HttpContext.User.Claims.FirstOrDefault(value => value.Type == ClaimTypes.Role)?.Value.Split(';').ToArray();
             var name = HttpContext.User.Claims.FirstOrDefault(value => value.Type == ClaimTypes.Name)?.Value;
             
             return new Dictionary<string, object?>{
                 {"login", login},
-                {"role", role},
+                {"roles", roles},
                 {"name", name}
             };
         }

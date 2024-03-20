@@ -42,15 +42,19 @@ namespace vega.Controllers
                 return Unauthorized("Wrong password");
             }
 
-            var userRole = await _db.RoleUsers.SingleOrDefaultAsync(userRole => userRole.UserId == user.Id);
-            var userRoleId = userRole?.RoleId;
-            var role = (await _db.Roles.SingleOrDefaultAsync(role => role.Id == userRoleId))?.Role1;
+            var userRoles = _db.RoleUsers
+                            .Where(userRole => userRole.UserId == user.Id)
+                            .Select(userRoles => userRoles.RoleId);
+
+
+            var roles = String.Join(';', _db.Roles.Where(role => userRoles.Contains(role.Id)).Select(role => role.Role1));
 
             var claims = new List<Claim> {
-                new Claim("id", user.Id.ToString()),
-                new Claim("login", user.Login),
-                new Claim(ClaimTypes.Role, role ?? throw new NullReferenceException(message: "Database does not store info about role")), 
+                new Claim(VegaClaimTypes.Id, user.Id.ToString()),
+                new Claim(VegaClaimTypes.Login, user.Login),
+                new Claim(ClaimTypes.Role, roles), 
             };
+
             if (user.FullName != null)
             {
                 claims.Add(new Claim(ClaimTypes.Name, user.FullName));
@@ -93,7 +97,7 @@ namespace vega.Controllers
             var principal = _tokenService.GetPrincipalFromExpiredToken(accessToken ?? throw new NullReferenceException());
 
             int id;
-            if (!Int32.TryParse(principal.FindFirst(value => value.Type == "id")?.Value, out id))
+            if (!Int32.TryParse(principal.FindFirst(value => value.Type == VegaClaimTypes.Id)?.Value, out id))
             {
                 throw new InvalidCastException();
             }
