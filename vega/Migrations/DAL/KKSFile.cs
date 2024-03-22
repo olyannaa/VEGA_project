@@ -6,9 +6,7 @@ public partial class KKSFile
 
     public string? KKSId { get; set; }
 
-    public string? FileName { get; set; }
+    public string FileName { get; set; } = null!;
 
     public DateTime? UploadDate  { get; set; }
-
-    public bool Status { get; set; }
 }

@@ -149,7 +149,6 @@ public partial class VegaContext : DbContext
             entity.Property(e => e.KKSId).HasColumnName("kks_id");
             entity.Property(e => e.FileName).HasColumnName("file_name");
             entity.Property(e => e.UploadDate).HasColumnName("upload_date");
-            entity.Property(e => e.Status).HasColumnName("status");
         });
 
         modelBuilder.Entity<KKSEmployee>(entity =>

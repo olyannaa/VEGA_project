@@ -50,7 +50,7 @@ builder.Services.AddSwaggerGen(options =>
 
 builder.Services.AddTransient<ITokenManager, TokenManager>();
 
-builder.Services.AddTransient<IStorageManager>(storageManager => new StorageManager("26.229.146.252:9000", "devuser", "devpassword"));
+builder.Services.AddTransient<IStorageManager>(storageManager => new StorageManager("10.147.18.80:9000", "devuser", "devpassword"));
 
 builder.Services.AddSingleton<IConfiguration>(builder.Configuration);
 
