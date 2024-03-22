@@ -22,6 +22,11 @@ namespace vega.Controllers
             _storageManager = storageManager;
         }
 
+        /// <summary>
+        /// Creates new order.
+        /// </summary>
+        /// <response code="200">Order created successfully</response>
+        /// <response code="400">\Bad request</response>
         [HttpPost("files")]
         public async Task<ActionResult> CreateNewOrder(IFormFileCollection files, [FromForm] OrderModel order)
         {
@@ -54,7 +59,12 @@ namespace vega.Controllers
             await _storageManager.CreateOrderAsync(files, order.OrderKKS, "vega-orders-bucket", order.Description, Roles.Documentation);
             return Ok();
         }
-
+        
+        /// <summary>
+        /// Deletes order by kks.
+        /// </summary>
+        /// <response code="200">Order deleted successfully</response>
+        /// <response code="400">\Bad request</response>
         [HttpDelete("files/{kks}")]
         public async Task<ActionResult> DeleteCompleteOrder([FromRoute] string kks)
         {
@@ -88,29 +98,43 @@ namespace vega.Controllers
             return Ok(fileNames.Count);
         }
 
+        /// <summary>
+        /// Return file by its path.
+        /// </summary>
+        /// <response code="200">Returns flie</response>
+        /// <response code="404">File is not found</response>
         [HttpGet("files")]
         public async Task<ActionResult> GetFileByPath([FromQuery] string? path)
         {
             var fileName = _db.KKSFiles.Where(e => e.FileName == path).FirstOrDefault()?.FileName;
             if (fileName == null)
             {
-                return BadRequest();
+                return NotFound();
             }
             var (fileStream, contentType) = await _storageManager.GetFile(fileName, "vega-orders-bucket");
             return new FileStreamResult(fileStream, contentType);
         }
 
+        /// <summary>
+        /// Returns all file paths by order kks.
+        /// </summary>
+        /// <response code="200">Order created successfully</response>
+        /// <response code="404">Files are not found</response>    
         [HttpGet("files/{kks}")]
         public ActionResult GetFileNamesByKKS([FromRoute] string? kks)
         {
             var fileNames = _db.KKSFiles.Where(e => e.KKSId == kks).Select(e => e.FileName).ToArray();
             if (fileNames.Length == 0)
             {
-                return BadRequest();
+                return NotFound();
             }
             return Ok(fileNames);
         }
 
+        /// <summary>
+        /// Returns all order kks.
+        /// </summary>
+        /// <response code="200">Returns list of kks</response>
         [HttpGet("kks")]
         public ActionResult GetKKS()
         {
@@ -118,6 +142,9 @@ namespace vega.Controllers
             return Ok(kks);
         }
 
+        /// <summary>
+        /// Returns order statistics.
+        /// </summary>
         [HttpGet("statistics")]
         public ActionResult GetOrdersStatistics()
         {
