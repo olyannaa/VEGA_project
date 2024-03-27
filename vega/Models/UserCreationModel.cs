@@ -15,6 +15,5 @@ public class UserCreationModel
     [Required]
     public int[]? RoleIds {get; set;}
 
-    [Required]
     public int? AreaId {get; set;}
 }

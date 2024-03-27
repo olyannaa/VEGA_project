@@ -44,10 +44,13 @@ namespace vega.Controllers
                     var user = new User{Login = userData.Login, Password = Hasher.HashMD5(userData.Password), FullName = userData.Name};
                     _db.Users.Add(user);
                     _db.SaveChanges();
-
-                    var areaUser = new AreaUser{UserId = user.Id, AreaId = userData.AreaId};
-                    _db.AreaUsers.Add(areaUser);
-                    _db.SaveChanges();
+                    if (userData.AreaId != null)
+                    {
+                        var areaUser = new AreaUser{UserId = user.Id, AreaId = userData.AreaId};
+                        _db.AreaUsers.Add(areaUser);
+                        _db.SaveChanges();
+                    }
+                    
 
                     foreach (var roleId in userData.RoleIds)
                     {
