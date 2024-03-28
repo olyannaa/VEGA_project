@@ -30,7 +30,7 @@ namespace vega.Controllers
         [HttpPost("files")]
         public async Task<ActionResult> CreateNewOrder(IFormFileCollection files, [FromForm] OrderModel order)
         {
-            if (order.OrderKKS == null || _db.KKSFiles.Where(e => e.KKSId == order.OrderKKS).FirstOrDefault() != null)
+            if (order.KKS == null || _db.Orders.Where(e => e.KKS == order.KKS).FirstOrDefault() != null)
             {
                 return BadRequest();
             }
@@ -39,16 +39,20 @@ namespace vega.Controllers
             using var transaction = _db.Database.BeginTransaction();
             try
             {
+                var created_order = new Order(){KKS = order.KKS};
+                _db.Add(created_order);
+                _db.SaveChanges();
+
                 foreach (IFormFile file in files)
                 {
-                    _db.Add(new KKSFile(){ 
-                        KKSId = order.OrderKKS,
-                        FileName = $"{order.OrderKKS}/{Roles.Documentation}/{file.FileName}",
+                    _db.Add(new OrderFile(){ 
+                        OrderId = created_order.Id,
+                        FileName = $"{order.KKS}/{Roles.Documentation}/{file.FileName}",
                         UploadDate = date
                     });
                 }
-                transaction.Commit();
                 _db.SaveChanges();
+                transaction.Commit();
             }
             catch (Exception)
             {
@@ -56,7 +60,7 @@ namespace vega.Controllers
                 return BadRequest();
             }
 
-            await _storageManager.CreateOrderAsync(files, order.OrderKKS, "vega-orders-bucket", order.Description, Roles.Documentation);
+            await _storageManager.CreateOrderAsync(files, order.KKS, "vega-orders-bucket", order.Description, Roles.Documentation);
             return Ok();
         }
         
@@ -68,7 +72,12 @@ namespace vega.Controllers
         [HttpDelete("files/{kks}")]
         public async Task<ActionResult> DeleteCompleteOrder([FromRoute] string kks)
         {
-            var files = _db.KKSFiles.Where(e => e.KKSId == kks).ToList();
+            var order = _db.Orders.FirstOrDefault(e => e.KKS == kks);
+            if (order == null)
+            {
+                return BadRequest("Order is not found");
+            }
+            var files = _db.OrderFiles.Where(e => e.OrderId == order.Id).ToList();
             var fileNames = files.Select(e => e.FileName).ToList();
             if (!fileNames.Any())
             {
@@ -81,6 +90,7 @@ namespace vega.Controllers
             using var transaction = _db.Database.BeginTransaction();
             try
             {
+                _db.Remove(order);
                 foreach (var file in files)
                 {
                     _db.Remove(file);
@@ -106,7 +116,7 @@ namespace vega.Controllers
         [HttpGet("files")]
         public async Task<ActionResult> GetFileByPath([FromQuery] string? path)
         {
-            var fileName = _db.KKSFiles.Where(e => e.FileName == path).FirstOrDefault()?.FileName;
+            var fileName = _db.OrderFiles.Where(e => e.FileName == path).FirstOrDefault()?.FileName;
             if (fileName == null)
             {
                 return NotFound();
@@ -123,7 +133,13 @@ namespace vega.Controllers
         [HttpGet("files/{kks}")]
         public ActionResult GetFileNamesByKKS([FromRoute] string? kks)
         {
-            var fileNames = _db.KKSFiles.Where(e => e.KKSId == kks).Select(e => e.FileName).ToArray();
+            var orderId = _db.Orders.FirstOrDefault(e => e.KKS == kks)?.Id;
+            if (orderId == null)
+            {
+                return BadRequest("Order is not found");
+            }
+
+            var fileNames = _db.OrderFiles.Where(e => e.OrderId == orderId).Select(e => e.FileName).ToArray();
             if (fileNames.Length == 0)
             {
                 return NotFound();
@@ -138,7 +154,7 @@ namespace vega.Controllers
         [HttpGet("kks")]
         public ActionResult GetKKS()
         {
-            var kks = _db.KKSFiles.GroupBy(e => e.KKSId).Select(g => g.First().KKSId).ToArray();
+            var kks = _db.OrderFiles.GroupBy(e => e.OrderId).Select(g => g.First().OrderId).ToArray();
             return Ok(kks);
         }
 
@@ -148,7 +164,7 @@ namespace vega.Controllers
         [HttpGet("statistics")]
         public ActionResult GetOrdersStatistics()
         {
-            var count = _db.KKSFiles.GroupBy(e => e.KKSId).Count();
+            var count = _db.OrderFiles.GroupBy(e => e.OrderId).Count();
             
             return Ok(count);
         }

@@ -27,9 +27,14 @@ public partial class VegaContext : DbContext
 
     public virtual DbSet<User> Users { get; set; }
 
-    public virtual DbSet<KKSFile> KKSFiles { get; set; }
+    public virtual DbSet<Order> Orders { get; set; }
 
-    public virtual DbSet<KKSEmployee> KKSEmployees { get; set; }
+    public virtual DbSet<OrderFile> OrderFiles { get; set; }
+
+    public virtual DbSet<OrderStep> OrderSteps { get; set; }
+
+    public virtual DbSet<Step> Steps { get; set; }
+
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -139,28 +144,65 @@ public partial class VegaContext : DbContext
                 .HasColumnName("refresh_expire_time");
         });
 
-        modelBuilder.Entity<KKSFile>(entity =>
+        modelBuilder.Entity<Order>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("kks_files_pk");
+            entity.HasKey(e => e.Id).HasName("orders_pkey");
 
-            entity.ToTable("kks_files");
+            entity.ToTable("orders");
 
-            entity.Property(e => e.Id).HasColumnName("id");
-            entity.Property(e => e.KKSId).HasColumnName("kks_id");
+            entity.Property(e => e.Id).HasColumnName("order_id");
+            entity.Property(e => e.KKS).HasColumnName("kks");
+        });
+
+        modelBuilder.Entity<OrderFile>(entity =>
+        {
+            entity.HasKey(e => e.FileId).HasName("orders_files_pk");
+
+            entity.ToTable("orders_files");
+
+            entity.Property(e => e.FileId).HasColumnName("file_id");
+            entity.Property(e => e.OrderId).HasColumnName("order_id");
             entity.Property(e => e.FileName).HasColumnName("file_name");
+            entity.Property(e => e.IsNeededToChange).HasColumnName("status");
             entity.Property(e => e.UploadDate).HasColumnName("upload_date");
         });
 
-        modelBuilder.Entity<KKSEmployee>(entity =>
+        modelBuilder.Entity<Step>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("kks_employees_pk");
+            entity.HasKey(e => e.Id).HasName("steps_pkey");
 
-            entity.ToTable("kks_employees");
+            entity.ToTable("steps");
 
-            entity.Property(e => e.Id).HasColumnName("id");
-            entity.Property(e => e.KKSId).HasColumnName("kks_id");
-            entity.Property(e => e.Role).HasColumnName("role");
+            entity.Property(e => e.Id).HasColumnName("step_id");
+            entity.Property(e => e.Name).HasColumnName("step");
+        });
+
+        modelBuilder.Entity<OrderStep>(entity =>
+        {
+            entity.HasKey(e => e.OrderId).HasName("orders_steps_pk");
+
+            entity.ToTable("orders_steps");
+
+            entity.Property(e => e.StepId).HasColumnName("step_id");
+            entity.Property(e => e.OrderId).HasColumnName("order_id");
             entity.Property(e => e.UserId).HasColumnName("user_id");
+            entity.Property(e => e.IsApproved).HasColumnName("status");
+
+            entity.HasOne(d => d.Order).WithMany(p => p.OrderSteps)
+                .HasForeignKey(d => d.OrderId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("orders_steps_order_id_fkey");
+
+            entity.HasOne(d => d.Step).WithMany(p => p.OrderSteps)
+                .HasForeignKey(d => d.OrderId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("orders_steps_step_id_fkey");
+
+            entity.HasOne(d => d.User).WithMany(p => p.OrderSteps)
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("orders_steps_user_id_fkey");
+            
         });
 
         OnModelCreatingPartial(modelBuilder);
