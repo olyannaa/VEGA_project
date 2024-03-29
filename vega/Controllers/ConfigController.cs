@@ -32,11 +32,10 @@ namespace vega.Controllers
         [DesiredUserInfoFilter(ClaimTypes.Role, VegaClaimTypes.Login)]
         public ActionResult AddNewUser([FromBody] UserCreationModel userData)
         {
-            if (userData.RoleIds == null)
+            if (_db.Users.FirstOrDefault(e => e.Login == userData.Login) != null)
             {
-                return BadRequest();
+                return BadRequest("This login is already in use");
             }
-            
             using (var transaction = _db.Database.BeginTransaction())
             {
                 try
