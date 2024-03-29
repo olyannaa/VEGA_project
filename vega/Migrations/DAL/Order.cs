@@ -6,7 +6,7 @@ public partial class Order
 
     public string? KKS { get; set; } = null!;
 
-    public virtual OrderFile? OrderFile { get; set; }
+    public virtual ICollection<OrderFile> OrderFiles { get; set; } = null!;
 
-    public virtual ICollection<OrderStep> OrderSteps { get; set; } = new List<OrderStep>();
+    public virtual ICollection<OrderStep> OrderSteps { get; set; } = null!;
 }

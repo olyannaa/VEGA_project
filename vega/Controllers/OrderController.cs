@@ -45,19 +45,33 @@ namespace vega.Controllers
 
                 foreach (IFormFile file in files)
                 {
-                    _db.Add(new OrderFile(){ 
+                    _db.Add(new OrderFile()
+                    { 
                         OrderId = created_order.Id,
                         FileName = $"{order.KKS}/{Roles.Documentation}/{file.FileName}",
                         UploadDate = date
                     });
+                    _db.SaveChanges();
                 }
-                _db.SaveChanges();
+
+                foreach (var step in _db.Steps.AsNoTracking().ToArray())
+                {
+                    _db.Add(new OrderStep()
+                    {
+                        StepId = step.Id,
+                        OrderId = created_order.Id,
+                        IsCompleted = step.Name == Roles.Documentation ? true : false,
+                        UserId = _db.Users.First(e => e.Id == 35).Id // переписать
+                    });
+                    _db.SaveChanges();
+                }
                 transaction.Commit();
             }
-            catch (Exception)
+            catch (Exception e)
             {
+                Console.WriteLine(e.Message);
                 transaction.Rollback();
-                return BadRequest();
+                return BadRequest(e.Message);
             }
 
             await _storageManager.CreateOrderAsync(files, order.KKS, "vega-orders-bucket", order.Description, Roles.Documentation);
@@ -87,25 +101,31 @@ namespace vega.Controllers
             {
                 fileNames.Add($"{kks}/{module}/meta.txt");
             }
+
+            var steps = _db.OrderSteps.Where(e => e.OrderId == order.Id).ToList(); 
             using var transaction = _db.Database.BeginTransaction();
             try
             {
-                _db.Remove(order);
                 foreach (var file in files)
                 {
                     _db.Remove(file);
                 }
+                foreach (var step in steps)
+                {
+                    _db.Remove(step);
+                }
+                _db.Remove(order);
                 _db.SaveChanges();
                 transaction.Commit();
             }
-            catch (Exception)
+            catch (Exception e)
             {
                 transaction.Rollback();
-                return BadRequest();
+                return BadRequest(e.Message);
             }
 
             await _storageManager.DeleteOrderAsync(kks, fileNames, "vega-orders-bucket");
-            return Ok(fileNames.Count);
+            return Ok();
         }
 
         /// <summary>
@@ -154,7 +174,7 @@ namespace vega.Controllers
         [HttpGet("kks")]
         public ActionResult GetKKS()
         {
-            var kks = _db.OrderFiles.GroupBy(e => e.OrderId).Select(g => g.First().OrderId).ToArray();
+            var kks = _db.Orders.Select(e => e.KKS).ToArray();
             return Ok(kks);
         }
 
@@ -164,9 +184,17 @@ namespace vega.Controllers
         [HttpGet("statistics")]
         public ActionResult GetOrdersStatistics()
         {
-            var count = _db.OrderFiles.GroupBy(e => e.OrderId).Count();
-            
-            return Ok(count);
+            var orders = _db.OrderSteps.GroupBy(e => e.OrderId);
+            var total = orders.Count();
+            var completed = orders.Select(g => g.First(e => e.Step.Id == 6).IsCompleted).Count(e => e == true);
+            var onApproval = orders.Select(g => g.First(e => e.Step.Name == Roles.IDPPSDevelopment).IsCompleted
+                                             && !g.First(e => e.Step.Name == Roles.AEPApproval).IsCompleted).Count(e => e == true);
+            return Ok(new StatisticsModel(){
+                Total = total,
+                Completed = completed,
+                OnApproval = onApproval,
+                InCompleted = total - completed
+            });
         }
     }
 }

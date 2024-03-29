@@ -12,5 +12,5 @@ public partial class OrderFile
 
     public DateTime? UploadDate  { get; set; }
 
-    public virtual Order? Area { get; set; }
+    public virtual Order? Order { get; set; }
 }

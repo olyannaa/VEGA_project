@@ -133,8 +133,8 @@ namespace vega.Controllers
         public async Task<ActionResult<IDictionary<int, string?>>> GetRolesInfo()
         {
             return await _db.Roles
-                .Select(area => new {area.Id, area.Role1})
-                .ToDictionaryAsync(area => area.Id, area => area.Role1);
+                .Select(role => new {role.Id, role.Name})
+                .ToDictionaryAsync(role => role.Id, role => role.Name);
         }
     }
 }

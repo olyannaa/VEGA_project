@@ -39,6 +39,7 @@ public partial class VegaContext : DbContext
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         optionsBuilder.LogTo(Console.WriteLine);
+        optionsBuilder.EnableSensitiveDataLogging();
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -85,7 +86,7 @@ public partial class VegaContext : DbContext
             entity.ToTable("roles");
 
             entity.Property(e => e.Id).HasColumnName("id");
-            entity.Property(e => e.Role1)
+            entity.Property(e => e.Name)
                 .HasMaxLength(30)
                 .HasColumnName("role");
         });
@@ -165,6 +166,11 @@ public partial class VegaContext : DbContext
             entity.Property(e => e.FileName).HasColumnName("file_name");
             entity.Property(e => e.IsNeededToChange).HasColumnName("status");
             entity.Property(e => e.UploadDate).HasColumnName("upload_date");
+
+            entity.HasOne(d => d.Order).WithMany(p => p.OrderFiles)
+                .HasForeignKey(d => d.OrderId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("orders_files_order_id_fkey");
         });
 
         modelBuilder.Entity<Step>(entity =>
@@ -179,14 +185,15 @@ public partial class VegaContext : DbContext
 
         modelBuilder.Entity<OrderStep>(entity =>
         {
-            entity.HasKey(e => e.OrderId).HasName("orders_steps_pk");
+            entity.HasKey(e => e.Id).HasName("orders_steps_pk");
 
             entity.ToTable("orders_steps");
 
+            entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.StepId).HasColumnName("step_id");
             entity.Property(e => e.OrderId).HasColumnName("order_id");
             entity.Property(e => e.UserId).HasColumnName("user_id");
-            entity.Property(e => e.IsApproved).HasColumnName("status");
+            entity.Property(e => e.IsCompleted).HasColumnName("is_completed");
 
             entity.HasOne(d => d.Order).WithMany(p => p.OrderSteps)
                 .HasForeignKey(d => d.OrderId)

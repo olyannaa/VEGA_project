@@ -7,7 +7,7 @@ public partial class Role
 {
     public int Id { get; set; }
 
-    public string? Role1 { get; set; }
+    public string? Name { get; set; }
 
-    public virtual ICollection<RoleUser> RoleUsers { get; } = new List<RoleUser>();
+    public virtual ICollection<RoleUser> RoleUsers { get; } = null!;
 }
