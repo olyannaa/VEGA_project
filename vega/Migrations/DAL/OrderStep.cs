@@ -12,9 +12,9 @@ public partial class OrderStep
 
     public bool IsCompleted { get; set; }
 
-    public virtual Order? Order { get; set; }
+    public virtual Order Order { get; set; } = null!;
 
-    public virtual Step? Step { get; set; }
+    public virtual Step Step { get; set; } = null!;
 
-    public virtual User? User { get; set; }
+    public virtual User User { get; set; } = null!;
 }

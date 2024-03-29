@@ -10,7 +10,7 @@ public partial class OrderFile
 
     public bool IsNeededToChange { get; set; }
 
-    public DateTime? UploadDate  { get; set; }
+    public DateTime UploadDate { get; set; }
 
     public virtual Order? Order { get; set; }
 }

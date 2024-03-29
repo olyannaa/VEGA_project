@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.DataProtection.KeyManagement.Internal;
 public class UserCreationModel
 {
     [Required]
-    public string? Login {get; set;}
+    public string Login {get; set;} = null!;
 
     [Required]
     public string? Password {get; set;}

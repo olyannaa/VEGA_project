@@ -201,7 +201,7 @@ public partial class VegaContext : DbContext
                 .HasConstraintName("orders_steps_order_id_fkey");
 
             entity.HasOne(d => d.Step).WithMany(p => p.OrderSteps)
-                .HasForeignKey(d => d.OrderId)
+                .HasForeignKey(d => d.StepId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("orders_steps_step_id_fkey");
 

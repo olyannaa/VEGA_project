@@ -143,29 +143,7 @@ namespace vega.Controllers
             }
             var (fileStream, contentType) = await _storageManager.GetFile(fileName, "vega-orders-bucket");
             return new FileStreamResult(fileStream, contentType);
-        }
-
-        /// <summary>
-        /// Returns all file paths by order kks.
-        /// </summary>
-        /// <response code="200">Order created successfully</response>
-        /// <response code="404">Files are not found</response>    
-        [HttpGet("files/{kks}")]
-        public ActionResult GetFileNamesByKKS([FromRoute] string? kks)
-        {
-            var orderId = _db.Orders.FirstOrDefault(e => e.KKS == kks)?.Id;
-            if (orderId == null)
-            {
-                return BadRequest("Order is not found");
-            }
-
-            var fileNames = _db.OrderFiles.Where(e => e.OrderId == orderId).Select(e => e.FileName).ToArray();
-            if (fileNames.Length == 0)
-            {
-                return NotFound();
-            }
-            return Ok(fileNames);
-        }
+        }    
 
         /// <summary>
         /// Returns all order kks.
@@ -176,6 +154,53 @@ namespace vega.Controllers
         {
             var kks = _db.Orders.Select(e => e.KKS).ToArray();
             return Ok(kks);
+        }
+
+        /// <summary>
+        /// Returns information about order by its kks.
+        /// </summary>
+        /// <response code="200">Returns order's information</response>
+        /// <response code="400">Order is not found</response>
+        [HttpGet("kks/{kks}")]
+        public ActionResult GetKKSInfo([FromRoute] string kks)
+        {
+            var order = _db.Orders.FirstOrDefault(e => e.KKS == kks);
+            if (order == null)
+            {
+                return BadRequest("Order is not found");
+            }
+            var orderStepsInfo = _db.OrderSteps.AsNoTracking()
+                                            .Where(e => e.OrderId == order.Id)
+                                            .Select(e => new Dictionary<string, object>()
+                                            {
+                                                {"step", e.Step.Name},
+                                                {"responsible", e.User.Login},
+                                                {"is_completed", e.IsCompleted}
+                                            })
+                                            .ToArray();
+            
+            var orderFileInfo = _db.OrderFiles.AsNoTracking()
+                                            .Where(e => e.OrderId == order.Id)
+                                            .ToArray()
+                                            .Select(e => new Dictionary<string, object>()
+                                            {
+                                                {"filename", e.FileName.Split('/').Last().ToString()},
+                                                {"path", e.FileName},
+                                                {"upload_date", e.UploadDate},
+                                                {"is_needed_to_change", e.IsNeededToChange}
+                                            })
+                                            .ToArray();
+
+            return Ok(new Dictionary<string, object>
+                            {
+                                {
+                                    kks, new Dictionary<string, object>
+                                            {
+                                                {"steps_info", orderStepsInfo},
+                                                {"files_info", orderFileInfo}
+                                            }
+                                }
+                            });
         }
 
         /// <summary>
