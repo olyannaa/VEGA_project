@@ -206,7 +206,7 @@ namespace vega.Controllers
         [HttpGet("files/info")]
         public ActionResult GetOrderFileInfo([FromQuery] string[] kkss)
         {
-            var responseData = new Dictionary<string, Dictionary<string, object>[]>();
+            var responseData = new Dictionary<int, object>();
             foreach (var kks in kkss)
             {
                 var order = _db.Orders.FirstOrDefault(e => e.KKS == kks);
@@ -225,7 +225,7 @@ namespace vega.Controllers
                                                                             })
                                                                             .ToArray();
                                                        
-                responseData.TryAdd(kks, orderFilesInfo);
+                responseData.TryAdd(order.Id, new Dictionary<string, object>{{"kks", kks}, {"files_info", orderFilesInfo}});
             }
             return Ok(responseData);
         }
