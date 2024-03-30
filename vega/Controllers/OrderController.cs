@@ -167,7 +167,7 @@ namespace vega.Controllers
         [HttpGet("info")]
         public ActionResult GetStepsInfo([FromQuery] string[] kkss)
         {
-            var responseData = new Dictionary<string, object>();
+            var responseData = new Dictionary<int, object>();
             foreach (var kks in kkss)
             {
                 var order = _db.Orders.FirstOrDefault(e => e.KKS == kks);
@@ -179,7 +179,7 @@ namespace vega.Controllers
                                                 .Where(e => e.OrderId == order.Id)
                                                 .Select(e => new Dictionary<string, object>()
                                                 {
-                                                    {"step", e.Step.Name},
+                                                    {"step_name", e.Step.Name},
                                                     {"responsible", e.User.Login},
                                                     {"is_completed", e.IsCompleted},
                                                     {"files", _db.OrderFiles.Where(e2 => e2.OrderId == order.Id && e2.StepId == e.StepId)
@@ -194,7 +194,7 @@ namespace vega.Controllers
                                                     }   
                                                 })
                                                 .ToArray();
-                responseData.TryAdd(kks, orderStepsInfo);
+                responseData.TryAdd(order.Id, new Dictionary<string, object>{{"kks", kks}, {"steps_info", orderStepsInfo}});
             }
             return Ok(responseData);
         }
