@@ -18,7 +18,7 @@ public partial class OrderFile
 
     public DateTime UploadDate { get; set; }
 
-    public virtual Order? Order { get; set; }
+    public virtual Order Order { get; set; } = null!;
 
-    public virtual Step? Step { get; set; }
+    public virtual Step Step { get; set; } = null!;
 }

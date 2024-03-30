@@ -27,7 +27,7 @@ namespace vega.Controllers
         /// </summary>
         /// <response code="200">Order created successfully</response>
         /// <response code="400">\Bad request</response>
-        [HttpPost("files")]
+        [HttpPost()]
         public async Task<ActionResult> CreateNewOrder(IFormFileCollection files, [FromForm] OrderModel order)
         {
             if (_db.Orders.Where(e => e.KKS == order.KKS).FirstOrDefault() != null)
@@ -94,14 +94,14 @@ namespace vega.Controllers
                 return BadRequest("Order is not found");
             }
             var files = _db.OrderFiles.Where(e => e.OrderId == order.Id).ToList();
-            var fileNames = files.Select(e => e.Path).ToList();
-            if (!fileNames.Any())
+            var filePaths = files.Select(e => e.Path).ToList();
+            if (!filePaths.Any())
             {
                 return Ok();
             }
-            foreach (var module in fileNames.ToArray().Select(fn => fn.Split('/')[1]).Distinct())
+            foreach (var module in filePaths.ToArray().Select(fn => fn.Split('/')[1]).Distinct())
             {
-                fileNames.Add($"{kks}/{module}/meta.txt");
+                filePaths.Add($"{kks}/{module}/meta.txt");
             }
 
             var steps = _db.OrderSteps.Where(e => e.OrderId == order.Id).ToList(); 
@@ -126,9 +126,11 @@ namespace vega.Controllers
                 return BadRequest(e.Message);
             }
 
-            await _storageManager.DeleteOrderAsync(kks, fileNames, "vega-orders-bucket");
+            await _storageManager.DeleteOrderAsync(kks, filePaths, "vega-orders-bucket");
             return Ok();
         }
+
+        
 
         /// <summary>
         /// Return file by its path.
@@ -164,7 +166,7 @@ namespace vega.Controllers
         /// <response code="200">Returns orders' information</response>
         /// <response code="400">Order is not found</response>
         [HttpGet("info")]
-        public ActionResult GetKKSInfo([FromQuery] string[] kkss)
+        public ActionResult GetStepsInfo([FromQuery] string[] kkss)
         {
             var responseData = new Dictionary<string, object>();
             foreach (var kks in kkss)
@@ -172,7 +174,7 @@ namespace vega.Controllers
                 var order = _db.Orders.FirstOrDefault(e => e.KKS == kks);
                 if (order == null)
                 {
-                    return BadRequest("Order is not found");
+                    continue;
                 }
                 var orderStepsInfo = _db.OrderSteps.AsNoTracking()
                                                 .Where(e => e.OrderId == order.Id)
@@ -194,6 +196,38 @@ namespace vega.Controllers
                                                 })
                                                 .ToArray();
                 responseData.TryAdd(kks, orderStepsInfo);
+            }
+            return Ok(responseData);
+        }
+
+    /// <summary>
+        /// Returns information about orders by theirs kks.
+        /// </summary>
+        /// <response code="200">Returns orders' information</response>
+        /// <response code="400">Order is not found</response>
+        [HttpGet("files/info")]
+        public ActionResult GetOrderFileInfo([FromQuery] string[] kkss)
+        {
+            var responseData = new Dictionary<string, Dictionary<string, object>[]>();
+            foreach (var kks in kkss)
+            {
+                var order = _db.Orders.FirstOrDefault(e => e.KKS == kks);
+                if (order == null)
+                {
+                    continue;
+                }
+                var orderFilesInfo =  _db.OrderFiles.Where(e => e.OrderId == order.Id)
+                                                                            .Select(e => new Dictionary<string, object>()
+                                                                            {
+                                                                                {"filename", e.FileName},
+                                                                                {"path", e.Path},
+                                                                                {"upload_date", e.UploadDate},
+                                                                                {"is_needed_to_change", e.IsNeededToChange},
+                                                                                {"step", e.Step.Name}
+                                                                            })
+                                                                            .ToArray();
+                                                       
+                responseData.TryAdd(kks, orderFilesInfo);
             }
             return Ok(responseData);
         }
