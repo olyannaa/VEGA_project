@@ -164,7 +164,6 @@ namespace vega.Controllers
         /// Returns information about orders by theirs kks.
         /// </summary>
         /// <response code="200">Returns orders' information</response>
-        /// <response code="400">Order is not found</response>
         [HttpGet("info")]
         public ActionResult GetStepsInfo([FromQuery] string[] kkss)
         {
@@ -200,11 +199,10 @@ namespace vega.Controllers
             return Ok(responseData);
         }
 
-    /// <summary>
-        /// Returns information about orders by theirs kks.
+        /// <summary>
+        /// Returns information about orders' files by theirs kks.
         /// </summary>
-        /// <response code="200">Returns orders' information</response>
-        /// <response code="400">Order is not found</response>
+        /// <response code="200">Returns files' information</response>
         [HttpGet("files/info")]
         public ActionResult GetOrderFileInfo([FromQuery] string[] kkss)
         {
