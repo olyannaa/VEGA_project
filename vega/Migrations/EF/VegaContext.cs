@@ -162,7 +162,9 @@ public partial class VegaContext : DbContext
             entity.ToTable("orders_files");
 
             entity.Property(e => e.FileId).HasColumnName("file_id");
+            entity.Property(e => e.StepId).HasColumnName("step_id");
             entity.Property(e => e.OrderId).HasColumnName("order_id");
+            entity.Property(e => e.Path).HasColumnName("path");
             entity.Property(e => e.FileName).HasColumnName("file_name");
             entity.Property(e => e.IsNeededToChange).HasColumnName("status");
             entity.Property(e => e.UploadDate).HasColumnName("upload_date");
@@ -171,6 +173,11 @@ public partial class VegaContext : DbContext
                 .HasForeignKey(d => d.OrderId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("orders_files_order_id_fkey");
+
+             entity.HasOne(d => d.Step).WithMany(p => p.OrderFiles)
+                .HasForeignKey(d => d.StepId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("orders_files_steps_fkey");
         });
 
         modelBuilder.Entity<Step>(entity =>
