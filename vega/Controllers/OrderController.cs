@@ -175,12 +175,14 @@ namespace vega.Controllers
                 {
                     continue;
                 }
+
+                var isApprovalCompleted = _db.OrderSteps.First(e => e.OrderId == order.Id && e.Step.Name == Steps.Approval).IsCompleted;
                 var orderStepsInfo = _db.OrderSteps.AsNoTracking()
                                                 .Where(e => e.OrderId == order.Id)
                                                 .Select(e => new Dictionary<string, object>()
                                                 {
                                                     {"step_name", e.Step.Name},
-                                                    {"responsibe", new Dictionary<string, object>{
+                                                    {"responsible", new Dictionary<string, object>{
                                                         {"login", e.User.Login},
                                                         {"name", e.User.FullName}
                                                     }},
@@ -191,12 +193,13 @@ namespace vega.Controllers
                                                                                 {"filename", e.FileName},
                                                                                 {"path", e.Path},
                                                                                 {"upload_date", e.UploadDate},
-                                                                                {"is_needed_to_change", e.IsNeededToChange}
+                                                                                {"status_id", Convert.ToInt32(e.IsNeededToChange) + Convert.ToInt32(isApprovalCompleted)}
                                                                             })
                                                                             .ToArray()
                                                     }   
                                                 })
                                                 .ToArray();
+                
                 responseData.TryAdd(order.Id, new Dictionary<string, object>{{"kks", kks}, {"steps_info", orderStepsInfo}});
             }
             return Ok(responseData);
