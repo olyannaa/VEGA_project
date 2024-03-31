@@ -176,7 +176,6 @@ namespace vega.Controllers
                     continue;
                 }
 
-                var isApprovalCompleted = _db.OrderSteps.First(e => e.OrderId == order.Id && e.Step.Name == Steps.Approval).IsCompleted;
                 var orderStepsInfo = _db.OrderSteps.AsNoTracking()
                                                 .Where(e => e.OrderId == order.Id)
                                                 .Select(e => new Dictionary<string, object>()
@@ -193,7 +192,7 @@ namespace vega.Controllers
                                                                                 {"filename", e.FileName},
                                                                                 {"path", e.Path},
                                                                                 {"upload_date", e.UploadDate},
-                                                                                {"status_id", Convert.ToInt32(e.IsNeededToChange) + Convert.ToInt32(isApprovalCompleted)}
+                                                                                {"is_needed_to_change", e.IsNeededToChange}
                                                                             })
                                                                             .ToArray()
                                                     }   
@@ -220,13 +219,14 @@ namespace vega.Controllers
                 {
                     continue;
                 }
+                var isApprovalCompleted = _db.OrderSteps.First(e => e.OrderId == order.Id && e.Step.Name == Steps.Approval).IsCompleted;
                 var orderFilesInfo =  _db.OrderFiles.Where(e => e.OrderId == order.Id)
                                                                             .Select(e => new Dictionary<string, object>()
                                                                             {
                                                                                 {"filename", e.FileName},
                                                                                 {"path", e.Path},
                                                                                 {"upload_date", e.UploadDate},
-                                                                                {"is_needed_to_change", e.IsNeededToChange},
+                                                                                {"status_id", Convert.ToInt32(e.IsNeededToChange) + Convert.ToInt32(isApprovalCompleted)},
                                                                                 {"step", e.Step.Name}
                                                                             })
                                                                             .ToArray();
