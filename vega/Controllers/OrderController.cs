@@ -156,7 +156,7 @@ namespace vega.Controllers
         [HttpGet("kks")]
         public ActionResult GetKKS()
         {
-            var kks = _db.Orders.Select(e => e.KKS).ToArray();
+            var kks = _db.Orders.ToDictionary(e => e.Id, e => e.KKS);
             return Ok(kks);
         }
 
@@ -180,7 +180,10 @@ namespace vega.Controllers
                                                 .Select(e => new Dictionary<string, object>()
                                                 {
                                                     {"step_name", e.Step.Name},
-                                                    {"responsible", e.User.Login},
+                                                    {"responsibe", new Dictionary<string, object>{
+                                                        {"login", e.User.Login},
+                                                        {"name", e.User.FullName}
+                                                    }},
                                                     {"is_completed", e.IsCompleted},
                                                     {"files", _db.OrderFiles.Where(e2 => e2.OrderId == order.Id && e2.StepId == e.StepId)
                                                                             .Select(e => new Dictionary<string, object>()

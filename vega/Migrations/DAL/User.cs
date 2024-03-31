@@ -11,7 +11,7 @@ public partial class User
 
     public string Password { get; set; } = null!;
     
-    public string? FullName { get; set;}
+    public string FullName { get; set;} = null!;
 
     public virtual AreaUser? AreasUser { get; set; }
 
