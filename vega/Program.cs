@@ -7,6 +7,8 @@ using Microsoft.OpenApi.Models;
 using vega;
 using vega.Logic;
 using Microsoft.Extensions.Caching.Memory;
+using Minio;
+using System.Diagnostics;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -47,6 +49,8 @@ builder.Services.AddSwaggerGen(options =>
     });
 
 builder.Services.AddTransient<ITokenManager, TokenManager>();
+
+builder.Services.AddTransient<IStorageManager>(storageManager => new StorageManager("10.147.18.80:9000", "devuser", "devpassword"));
 
 builder.Services.AddSingleton<IConfiguration>(builder.Configuration);
 

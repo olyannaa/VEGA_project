@@ -32,11 +32,10 @@ namespace vega.Controllers
         [DesiredUserInfoFilter(ClaimTypes.Role, VegaClaimTypes.Login)]
         public ActionResult AddNewUser([FromBody] UserCreationModel userData)
         {
-            if (userData.RoleIds == null)
+            if (_db.Users.FirstOrDefault(e => e.Login == userData.Login) != null)
             {
-                return BadRequest();
+                return BadRequest("This login is already in use");
             }
-            
             using (var transaction = _db.Database.BeginTransaction())
             {
                 try
@@ -44,10 +43,13 @@ namespace vega.Controllers
                     var user = new User{Login = userData.Login, Password = Hasher.HashMD5(userData.Password), FullName = userData.Name};
                     _db.Users.Add(user);
                     _db.SaveChanges();
-
-                    var areaUser = new AreaUser{UserId = user.Id, AreaId = userData.AreaId};
-                    _db.AreaUsers.Add(areaUser);
-                    _db.SaveChanges();
+                    if (userData.AreaId != null)
+                    {
+                        var areaUser = new AreaUser{UserId = user.Id, AreaId = userData.AreaId};
+                        _db.AreaUsers.Add(areaUser);
+                        _db.SaveChanges();
+                    }
+                    
 
                     foreach (var roleId in userData.RoleIds)
                     {
@@ -130,8 +132,8 @@ namespace vega.Controllers
         public async Task<ActionResult<IDictionary<int, string?>>> GetRolesInfo()
         {
             return await _db.Roles
-                .Select(area => new {area.Id, area.Role1})
-                .ToDictionaryAsync(area => area.Id, area => area.Role1);
+                .Select(role => new {role.Id, role.Name})
+                .ToDictionaryAsync(role => role.Id, role => role.Name);
         }
     }
 }

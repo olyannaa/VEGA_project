@@ -47,7 +47,7 @@ namespace vega.Controllers
                             .Select(userRoles => userRoles.RoleId);
 
 
-            var roles = String.Join(';', _db.Roles.Where(role => userRoles.Contains(role.Id)).Select(role => role.Role1));
+            var roles = String.Join(';', _db.Roles.Where(role => userRoles.Contains(role.Id)).Select(role => role.Name));
 
             var claims = new List<Claim> {
                 new Claim(VegaClaimTypes.Id, user.Id.ToString()),

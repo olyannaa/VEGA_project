@@ -4,17 +4,16 @@ using Microsoft.AspNetCore.DataProtection.KeyManagement.Internal;
 public class UserCreationModel
 {
     [Required]
-    public string? Login {get; set;}
+    public string Login {get; set;} = null!;
 
     [Required]
-    public string? Password {get; set;}
+    public string Password {get; set;} = null!;
 
     [Required]
-    public string? Name {get; set;}
+    public string Name {get; set;} = null!;
 
     [Required]
-    public int[]? RoleIds {get; set;}
+    public int[] RoleIds {get; set;} = null!;
 
-    [Required]
     public int? AreaId {get; set;}
 }
