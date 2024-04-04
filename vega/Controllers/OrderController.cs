@@ -146,7 +146,9 @@ namespace vega.Controllers
                 return NotFound();
             }
             var (fileStream, contentType) = await _storageManager.GetFile(fileName, "vega-orders-bucket");
-            return new FileStreamResult(fileStream, contentType);
+            byte[] buffer = new byte[fileStream.Length];
+            fileStream.Read(buffer);
+            return Ok(new FileModel{FileStream = buffer, ContentType = contentType});
         }    
 
         /// <summary>
