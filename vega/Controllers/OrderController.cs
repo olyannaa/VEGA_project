@@ -30,7 +30,7 @@ namespace vega.Controllers
         [HttpPost()]
         public async Task<ActionResult> CreateNewOrder(IFormFileCollection files, [FromForm] OrderModel order)
         {
-            if (_db.Orders.Where(e => e.KKS == order.KKS).FirstOrDefault() != null)
+            if (_db.Orders.Where(e => e.KKS == order.KKS).FirstOrDefault() != null || files == null || files.Count() == 0)
             {
                 return BadRequest();
             }
@@ -95,13 +95,10 @@ namespace vega.Controllers
             }
             var files = _db.OrderFiles.Where(e => e.OrderId == order.Id).ToList();
             var filePaths = files.Select(e => e.Path).ToList();
-            if (!filePaths.Any())
+
+            foreach (var step in filePaths.ToArray().Select(fn => fn.Split('/')[1]).Distinct())
             {
-                return Ok();
-            }
-            foreach (var module in filePaths.ToArray().Select(fn => fn.Split('/')[1]).Distinct())
-            {
-                filePaths.Add($"{kks}/{module}/meta.txt");
+                filePaths.Add($"{kks}/{step}/meta.txt");
             }
 
             var steps = _db.OrderSteps.Where(e => e.OrderId == order.Id).ToList(); 
