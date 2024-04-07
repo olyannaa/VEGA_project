@@ -41,6 +41,10 @@ public class StorageManager : IStorageManager
         {
             throw new NullReferenceException();
         }
+        if (!fileNames.Any())
+        {
+            return;
+        }
         var removeArgs = new RemoveObjectsArgs()
             .WithBucket(bucketName)
             .WithObjects(fileNames);
