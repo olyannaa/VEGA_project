@@ -48,7 +48,7 @@ namespace vega.Controllers
                     _db.Add(new OrderFile()
                     { 
                         OrderId = created_order.Id,
-                        StepId = _db.Steps.AsNoTracking().First(e => e.Name == Steps.Documentation).Id,
+                        StepId = _db.Steps.AsNoTracking().First(e => e.Name == Steps.Entry).Id,
                         FileName = file.FileName,
                         Path = $"{order.KKS}/{Roles.Documentation}/{file.FileName}",
                         UploadDate = date
@@ -143,9 +143,7 @@ namespace vega.Controllers
                 return NotFound();
             }
             var (fileStream, contentType) = await _storageManager.GetFile(fileName, "vega-orders-bucket");
-            byte[] buffer = new byte[fileStream.Length];
-            fileStream.Read(buffer);
-            return Ok(new FileModel{FileStream = buffer, ContentType = contentType});
+            return new FileStreamResult(fileStream, contentType);
         }    
 
         /// <summary>
@@ -241,16 +239,49 @@ namespace vega.Controllers
         [HttpGet("statistics")]
         public ActionResult GetOrdersStatistics()
         {
-            var orders = _db.OrderSteps.GroupBy(e => e.OrderId);
-            var total = orders.Count();
-            var completed = orders.Select(g => g.First(e => e.Step.Id == 6).IsCompleted).Count(e => e == true);
-            var onApproval = orders.Select(g => g.First(e => e.Step.Name == Roles.IDPPSDevelopment).IsCompleted
-                                             && !g.First(e => e.Step.Name == Roles.Approval).IsCompleted).Count(e => e == true);
+            var orderSteps = _db.OrderSteps.GroupBy(e => e.OrderId);
+            var total = orderSteps.Count();
+            var completed = orderSteps.Select(g => g.Where(e => e.Step.Id == 7).Select(e => e.IsCompleted))
+                                    .AsEnumerable()
+                                    .Count(e => e.All(e => e == true));
+
+            var onEntry = orderSteps.Select(g => g.Where(e => e.Step.Name == Steps.Entry).Any(e => e.IsCompleted == false))
+                                    .Count(e => e == true);
+
+            var onTIDev = orderSteps.Select(g => g.Where(e => e.Step.Name == Steps.Entry).All(e => e.IsCompleted == true)
+                                                && g.Where(e => e.Step.Name == Steps.TIDev).Any(e => e.IsCompleted == false))
+                                    .Count(e => e == true);
+
+            var onDDDev = orderSteps.Select(g => g.Where(e => e.Step.Name == Steps.TIDev).All(e => e.IsCompleted == true)
+                                                && g.Where(e => e.Step.Name == Steps.DDDev).Any(e => e.IsCompleted == false))
+                                    .Count(e => e == true);
+
+            var onIDPPSDev = orderSteps.Select(g => g.Where(e => e.Step.Name == Steps.DDDev).All(e => e.IsCompleted == true)
+                                                && g.Where(e => e.Step.Name == Steps.IDPPSDev).Any(e => e.IsCompleted == false))
+                                    .Count(e => e == true);
+
+            var onApproval = orderSteps.Select(g => g.Where(e => e.Step.Name == Steps.IDPPSDev).All(e => e.IsCompleted == true)
+                                                && g.Where(e => e.Step.Name == Steps.Approval).Any(e => e.IsCompleted == false))
+                                    .Count(e => e == true);
+
+            var onSupply = orderSteps.Select(g => g.Where(e => e.Step.Name == Steps.Approval).All(e => e.IsCompleted == true)
+                                                && g.Where(e => e.Step.Name == Steps.Supply).Any(e => e.IsCompleted == false))
+                                    .Count(e => e == true);
+
+            var onStorage = orderSteps.Select(g => g.Where(e => e.Step.Name == Steps.Supply).All(e => e.IsCompleted == true)
+                                                && g.Where(e => e.Step.Name == Steps.Storage).Any(e => e.IsCompleted == false))
+                                    .Count(e => e == true);
+
             return Ok(new StatisticsModel(){
                 Total = total,
                 Completed = completed,
+                OnEntry = onEntry,
+                OnTIDev = onTIDev,
+                OnDDDev = onDDDev,
+                OnIDPPSDev = onIDPPSDev,
+                OnSupply = onSupply,
                 OnApproval = onApproval,
-                InCompleted = total - completed
+                OnStorage = onStorage,
             });
         }
     }
