@@ -200,9 +200,29 @@ namespace vega.Controllers
                                                                                 {"is_needed_to_change", e.IsNeededToChange}
                                                                             })
                                                                             .ToArray()
-                                                    }   
+                                                    },
+                                                    {"children", e.Children.Select(e => new Dictionary<string, object>()
+                                                        {
+                                                            {"step_id", e.StepId},
+                                                            {"step_name", e.Step.Name},
+                                                            {"responsible", new Dictionary<string, object>{
+                                                                {"login", e.User.Login},
+                                                                {"name", e.User.FullName}
+                                                            }},
+                                                            {"is_completed", e.IsCompleted},
+                                                            {"files", _db.OrderFiles.Where(e2 => e2.OrderId == order.Id && e2.StepId == e.StepId)
+                                                                                    .Select(e => new Dictionary<string, object>()
+                                                                                    {
+                                                                                        {"filename",  e.FileName},
+                                                                                        {"path", e.Path},
+                                                                                        {"upload_date", e.UploadDate},
+                                                                                        {"is_needed_to_change", e.IsNeededToChange}
+                                                                                    })
+                                                                                    .ToArray()}
+                                                        })
+                                                    }
                                                 })
-                                                .ToDictionary(e => e["step_id"], e => {e.Remove("step_id"); return e;});
+                                                .ToArray();
                 
                 responseData.TryAdd(order.Id, new Dictionary<string, object>{{"kks", kks}, {"steps_info", orderStepsInfo}});
             }

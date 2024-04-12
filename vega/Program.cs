@@ -9,6 +9,7 @@ using vega.Logic;
 using Microsoft.Extensions.Caching.Memory;
 using Minio;
 using System.Diagnostics;
+using Microsoft.AspNetCore.Mvc.ModelBinding.Binders;
 
 var builder = WebApplication.CreateBuilder(args);
 
