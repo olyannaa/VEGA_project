@@ -1,4 +1,5 @@
 
+using System.Net.Http.Headers;
 using System.Net.Mime;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -253,10 +254,12 @@ namespace vega.Controllers
                                     .Count(e => e == true);
 
             var onDDDev = orderSteps.Select(g => g.Where(e => e.Step.Name == Steps.TIDev).All(e => e.IsCompleted == true)
-                                                && g.Where(e => e.Step.Name == Steps.DDDev).Any(e => e.IsCompleted == false))
+                                                && g.Where(e => e.Step.Name == Steps.SpecDev || e.Step.Name == Steps.SchemeDev)
+                                                    .Any(e => e.IsCompleted == false))
                                     .Count(e => e == true);
 
-            var onIDPPSDev = orderSteps.Select(g => g.Where(e => e.Step.Name == Steps.DDDev).All(e => e.IsCompleted == true)
+            var onIDPPSDev = orderSteps.Select(g => g.Where(e => e.Step.Name == Steps.SpecDev || e.Step.Name == Steps.SchemeDev)
+                                                    .All(e => e.IsCompleted == true)
                                                 && g.Where(e => e.Step.Name == Steps.IDPPSDev).Any(e => e.IsCompleted == false))
                                     .Count(e => e == true);
 
