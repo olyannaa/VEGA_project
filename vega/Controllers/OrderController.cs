@@ -3,6 +3,7 @@ using System.Net.Http.Headers;
 using System.Net.Mime;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Query.SqlExpressions;
 using Minio;
 using Minio.DataModel.Args;
 
@@ -57,15 +58,20 @@ namespace vega.Controllers
                     _db.SaveChanges();
                 }
 
-                foreach (var step in _db.Steps.AsNoTracking().ToArray())
+                foreach (var step in _db.Steps.AsNoTracking().OrderBy(e => e.Id).ToArray())
                 {
-                    _db.Add(new OrderStep()
+                    var orderStep = new OrderStep()
                     {
                         StepId = step.Id,
                         OrderId = created_order.Id,
-                        IsCompleted = step.Name == Roles.Documentation ? true : false,
-                        UserId = _db.Users.First(e => e.Id == 35).Id // переписать
-                    });
+                        IsCompleted = step.Name == Steps.Entry ? true : false,
+                        UserId = _db.Users.First(e => e.Id == 35).Id, // переписать
+                    };
+                    if (orderStep.StepId == 5 || orderStep.StepId == 4)
+                    {
+                        orderStep.ParentId = _db.OrderSteps.First(e => e.OrderId == created_order.Id && e.Step.Name == Steps.DDDev).Id;
+                    }
+                    _db.Add(orderStep);
                     _db.SaveChanges();
                 }
                 transaction.Commit();
@@ -175,9 +181,10 @@ namespace vega.Controllers
                 }
 
                 var orderStepsInfo = _db.OrderSteps.AsNoTracking()
-                                                .Where(e => e.OrderId == order.Id)
+                                                .Where(e => e.OrderId == order.Id && e.Parent == null)
                                                 .Select(e => new Dictionary<string, object>()
                                                 {
+                                                    {"step_id", e.StepId},
                                                     {"step_name", e.Step.Name},
                                                     {"responsible", new Dictionary<string, object>{
                                                         {"login", e.User.Login},
@@ -195,7 +202,7 @@ namespace vega.Controllers
                                                                             .ToArray()
                                                     }   
                                                 })
-                                                .ToArray();
+                                                .ToDictionary(e => e["step_id"], e => {e.Remove("step_id"); return e;});
                 
                 responseData.TryAdd(order.Id, new Dictionary<string, object>{{"kks", kks}, {"steps_info", orderStepsInfo}});
             }

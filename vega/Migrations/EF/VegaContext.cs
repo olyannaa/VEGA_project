@@ -200,6 +200,7 @@ public partial class VegaContext : DbContext
             entity.Property(e => e.StepId).HasColumnName("step_id");
             entity.Property(e => e.OrderId).HasColumnName("order_id");
             entity.Property(e => e.UserId).HasColumnName("user_id");
+            entity.Property(e => e.ParentId).HasColumnName("parent_id");
             entity.Property(e => e.IsCompleted).HasColumnName("is_completed");
 
             entity.HasOne(d => d.Order).WithMany(p => p.OrderSteps)
@@ -216,6 +217,11 @@ public partial class VegaContext : DbContext
                 .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("orders_steps_user_id_fkey");
+
+            entity.HasOne(d => d.Parent).WithMany(p => p.Children)
+                .HasForeignKey(d => d.ParentId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("orders_steps_orders_steps_fkey");
             
         });
 
