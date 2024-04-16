@@ -4,7 +4,7 @@ public partial class Order
 {
     public int Id { get; set; }
 
-    public string? KKS { get; set; } = null!;
+    public string KKS { get; set; } = null!;
 
     public virtual ICollection<OrderFile> OrderFiles { get; set; } = null!;
 

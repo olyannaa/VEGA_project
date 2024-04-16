@@ -165,20 +165,31 @@ namespace vega.Controllers
         }
 
         /// <summary>
-        /// Returns information about orders by theirs kks.
+        /// Returns order page count.
+        /// </summary>
+        /// <response code="200">Returns count value</response>
+        [HttpGet("pages")]
+        public ActionResult GetPagesCount()
+        {
+            var count = _db.Orders.Count() / 8 + 1;
+            return Ok(count);
+        }
+
+        /// <summary>
+        /// Returns information about orders by pages.
         /// </summary>
         /// <response code="200">Returns orders' information</response>
         [HttpGet("info")]
-        public ActionResult GetStepsInfo([FromQuery] string[] kkss)
+        public ActionResult GetStepsInfo([FromQuery] int page)
         {
-            var responseData = new Dictionary<int, object>();
-            foreach (var kks in kkss)
+            if (page <= 0)
             {
-                var order = _db.Orders.FirstOrDefault(e => e.KKS == kks);
-                if (order == null)
-                {
-                    continue;
-                }
+                return BadRequest("Wrong value");
+            }
+
+            var responseData = new Dictionary<int, object>();
+            foreach (var order in _db.Orders.AsNoTracking().OrderBy(e => e.OrderSteps.First(e => e.IsCompleted == true).StepId).Skip(8 * (page - 1)).Take(8).ToArray())
+            {
 
                 var orderStepsInfo = _db.OrderSteps.AsNoTracking()
                                                 .Where(e => e.OrderId == order.Id && e.Parent == null)
@@ -224,7 +235,7 @@ namespace vega.Controllers
                                                 })
                                                 .ToArray();
                 
-                responseData.TryAdd(order.Id, new Dictionary<string, object>{{"kks", kks}, {"steps_info", orderStepsInfo}});
+                responseData.TryAdd(order.Id, new Dictionary<string, object>{{"kks", order.KKS}, {"steps_info", orderStepsInfo}});
             }
             return Ok(responseData);
         }
