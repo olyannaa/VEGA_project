@@ -202,6 +202,7 @@ public partial class VegaContext : DbContext
             entity.Property(e => e.UserId).HasColumnName("user_id");
             entity.Property(e => e.ParentId).HasColumnName("parent_id");
             entity.Property(e => e.IsCompleted).HasColumnName("is_completed");
+            entity.Property(e => e.Comment).HasColumnName("comment");
 
             entity.HasOne(d => d.Order).WithMany(p => p.OrderSteps)
                 .HasForeignKey(d => d.OrderId)

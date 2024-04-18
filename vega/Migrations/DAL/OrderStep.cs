@@ -14,6 +14,8 @@ public partial class OrderStep
 
     public bool IsCompleted { get; set; }
 
+    public string? Comment { get; set;}
+
     public virtual Order Order { get; set; } = null!;
 
     public virtual Step Step { get; set; } = null!;

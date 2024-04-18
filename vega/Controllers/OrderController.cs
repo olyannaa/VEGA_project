@@ -1,4 +1,5 @@
 
+using System.IO.IsolatedStorage;
 using System.Net.Http.Headers;
 using System.Net.Mime;
 using Microsoft.AspNetCore.Mvc;
@@ -66,6 +67,7 @@ namespace vega.Controllers
                         OrderId = created_order.Id,
                         IsCompleted = step.Name == Steps.Entry ? true : false,
                         UserId = _db.Users.First(e => e.Id == 35).Id, // переписать
+                        Comment = step.Name == Steps.Entry ? order.Description : null
                     };
                     if (orderStep.StepId == 5 || orderStep.StepId == 4)
                     {
@@ -193,7 +195,7 @@ namespace vega.Controllers
 
                 var orderStepsInfo = _db.OrderSteps.AsNoTracking()
                                                 .Where(e => e.OrderId == order.Id && e.Parent == null)
-                                                .Select(e => new Dictionary<string, object>()
+                                                .Select(e => new Dictionary<string, object?>()
                                                 {
                                                     {"step_id", e.StepId},
                                                     {"step_name", e.Step.Name},
@@ -202,6 +204,7 @@ namespace vega.Controllers
                                                         {"name", e.User.FullName}
                                                     }},
                                                     {"is_completed", e.IsCompleted},
+                                                    {"comment", e.Comment},
                                                     {"files", _db.OrderFiles.Where(e2 => e2.OrderId == order.Id && e2.StepId == e.StepId)
                                                                             .Select(e => new Dictionary<string, object>()
                                                                             {
@@ -212,7 +215,7 @@ namespace vega.Controllers
                                                                             })
                                                                             .ToArray()
                                                     },
-                                                    {"children", e.Children.Select(e => new Dictionary<string, object>()
+                                                    {"children", e.Children.Select(e => new Dictionary<string, object?>()
                                                         {
                                                             {"step_id", e.StepId},
                                                             {"step_name", e.Step.Name},
@@ -221,6 +224,7 @@ namespace vega.Controllers
                                                                 {"name", e.User.FullName}
                                                             }},
                                                             {"is_completed", e.IsCompleted},
+                                                            {"comment", e.Comment},
                                                             {"files", _db.OrderFiles.Where(e2 => e2.OrderId == order.Id && e2.StepId == e.StepId)
                                                                                     .Select(e => new Dictionary<string, object>()
                                                                                     {
