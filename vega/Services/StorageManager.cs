@@ -1,23 +1,15 @@
-using System.IO.Pipelines;
-using System.Net.Http.Headers;
-using Microsoft.AspNetCore.Connections;
+
 using Microsoft.AspNetCore.StaticFiles;
-using Microsoft.Extensions.FileSystemGlobbing;
-using Microsoft.Win32.SafeHandles;
 using Minio;
 using Minio.DataModel.Args;
 using Minio.Exceptions;
-using vega;
 public class StorageManager : IStorageManager
 {
     private readonly IMinioClient _minioClient;
 
-    public StorageManager(string host, string access, string secret)
+    public StorageManager(IMinioClient minioClient)
     {
-        _minioClient = new MinioClient().WithEndpoint(host)
-                                        .WithCredentials(access, secret)
-                                        .WithSSL(false)
-                                        .Build();
+        _minioClient = minioClient;
     }
 
     public async Task CreateOrderAsync(IFormFileCollection files, string kks, string bucketName, string? description, string? role)

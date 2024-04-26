@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authentication.Cookies;
+
 using System.Reflection;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -6,10 +6,9 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using vega;
 using vega.Logic;
-using Microsoft.Extensions.Caching.Memory;
+using DinkToPdf.Contracts;
+using DinkToPdf;
 using Minio;
-using System.Diagnostics;
-using Microsoft.AspNetCore.Mvc.ModelBinding.Binders;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -51,7 +50,16 @@ builder.Services.AddSwaggerGen(options =>
 
 builder.Services.AddTransient<ITokenManager, TokenManager>();
 
-builder.Services.AddTransient<IStorageManager>(storageManager => new StorageManager("10.147.18.80:9000", "devuser", "devpassword"));
+builder.Services.AddMinio(options => {options.WithEndpoint("10.147.18.80:9000")
+                              .WithCredentials("devuser", "devpassword")
+                              .WithSSL(false)
+                              .Build();});
+
+builder.Services.AddTransient<IStorageManager, StorageManager>();
+
+builder.Services.AddSingleton<IConverter>(new SynchronizedConverter(new PdfTools()));
+
+builder.Services.AddTransient<IFileConverter, FileConverter>();
 
 builder.Services.AddSingleton<IConfiguration>(builder.Configuration);
 
