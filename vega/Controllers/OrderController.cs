@@ -239,7 +239,12 @@ namespace vega.Controllers
                                                 })
                                                 .ToArray();
                 
-                responseData.TryAdd(order.Id, new Dictionary<string, object>{{"kks", order.KKS}, {"steps_info", orderStepsInfo}});
+                responseData.TryAdd(order.Id, new Dictionary<string, object>
+                {
+                    {"kks", order.KKS}, 
+                    {"is_completed", _db.OrderSteps.AsNoTracking().Where(e => e.OrderId == order.Id).All(e => e.IsCompleted)}, 
+                    {"steps_info", orderStepsInfo}
+                });
             }
             return Ok(responseData);
         }
