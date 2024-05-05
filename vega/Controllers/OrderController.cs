@@ -1,16 +1,14 @@
 
-using System.IO.IsolatedStorage;
-using System.Net.Http.Headers;
-using System.Net.Mime;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Query.SqlExpressions;
-using Minio;
-using Minio.DataModel.Args;
+
 
 namespace vega.Controllers
 {
     [ApiController]
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
     [Route("api/[controller]")]
     public class OrderController : ControllerBase
     {

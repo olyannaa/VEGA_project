@@ -1,10 +1,13 @@
-using System.Security.Claims;
+
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+
 
 namespace vega.Controllers
 {
     [ApiController]
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
     [Route("api/[controller]")]
     public class FileController : ControllerBase
     {
@@ -20,7 +23,7 @@ namespace vega.Controllers
         }
 
         [HttpPost("convert-to-pdf")]
-        public ActionResult GetFileByPath(IFormFile file)
+        public ActionResult ConvertToPdf(IFormFile file)
         {
             if (file.ContentType == "application/msword"
                 || file.ContentType == "application/vnd.openxmlformats-officedocument.wordprocessingml.document")
