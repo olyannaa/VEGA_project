@@ -51,12 +51,9 @@ namespace vega.Controllers
                     }
                     
 
-                    foreach (var roleId in userData.RoleIds)
-                    {
-                        var userRole = new RoleUser{UserId = user.Id, RoleId = roleId};
-                        _db.RoleUsers.Add(userRole);
-                        _db.SaveChanges();
-                    }
+                    var userRole = new RoleUser{UserId = user.Id, RoleId = userData.RoleId};
+                    _db.RoleUsers.Add(userRole);
+                    _db.SaveChanges();
                     
                     transaction.Commit();
 

@@ -13,7 +13,7 @@ public class UserCreationModel
     public string Name {get; set;} = null!;
 
     [Required]
-    public int[] RoleIds {get; set;} = null!;
+    public int RoleId {get; set;}
 
     public int? AreaId {get; set;}
 }

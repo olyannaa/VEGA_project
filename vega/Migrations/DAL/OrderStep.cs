@@ -8,7 +8,7 @@ public partial class OrderStep
 
     public int OrderId { get; set; }
 
-    public int UserId { get; set; }
+    public int? UserId { get; set; }
 
     public int? ParentId {get; set;}
 
@@ -20,7 +20,7 @@ public partial class OrderStep
 
     public virtual Step Step { get; set; } = null!;
 
-    public virtual User User { get; set; } = null!;
+    public virtual User? User { get; set; } = null!;
 
     public virtual OrderStep? Parent { get; set; }
 

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.VisualBasic;
 
 namespace vega;
 
@@ -35,6 +36,8 @@ public partial class VegaContext : DbContext
 
     public virtual DbSet<Step> Steps { get; set; }
 
+    public virtual DbSet<StepRole> StepRoles { get; set;}
+
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -60,7 +63,7 @@ public partial class VegaContext : DbContext
 
         modelBuilder.Entity<AreaUser>(entity =>
         {
-            entity.HasKey(e => e.UserId).HasName("areas_users_pk");
+            entity.HasKey(e => e.Id).HasName("areas_users_pk");
 
             entity.ToTable("areas_users");
 
@@ -109,8 +112,8 @@ public partial class VegaContext : DbContext
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("role_user_role_id_fkey");
 
-            entity.HasOne(d => d.User).WithMany(p => p.RoleUsers)
-                .HasForeignKey(d => d.UserId)
+            entity.HasOne(d => d.User).WithOne(p => p.RoleUser)
+                .HasForeignKey<RoleUser>(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("role_user_user_id_fkey");
         });
@@ -190,6 +193,27 @@ public partial class VegaContext : DbContext
             entity.Property(e => e.Name).HasColumnName("step");
         });
 
+        modelBuilder.Entity<StepRole>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("roles_steps_pk");
+
+            entity.ToTable("roles_steps");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.StepId).HasColumnName("step_id");
+            entity.Property(e => e.RoleId).HasColumnName("role_id");
+
+            entity.HasOne(d => d.Role).WithOne(p => p.StepRole)
+                .HasForeignKey<StepRole>(d => d.RoleId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("orders_steps_roles_fk");
+
+            entity.HasOne(d => d.Step).WithOne(p => p.StepRole)
+                .HasForeignKey<StepRole>(d => d.StepId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("orders_steps_steps_fk");
+        });
+
         modelBuilder.Entity<OrderStep>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("orders_steps_pk");
@@ -227,6 +251,26 @@ public partial class VegaContext : DbContext
         });
 
         OnModelCreatingPartial(modelBuilder);
+    }
+
+    public bool TryUpdateParentalStepCompletion(OrderStep initOrderStep)
+    {
+        var orderId = initOrderStep.OrderId;
+        var stepId = initOrderStep.StepId;
+        var orderStep = OrderSteps.Where(e => e.StepId == stepId && e.OrderId == orderId);
+        var parent = orderStep.Select(e => e.Parent).SingleOrDefault();
+        if (orderStep.SingleOrDefault() != null && parent != null)
+        {
+            var children = orderStep.Select(e => e.Parent).Select(e => e.Children).SingleOrDefault();
+            if (children != null && children.All(e => e.IsCompleted))
+            {
+                parent.IsCompleted = true;
+                SaveChanges();
+                return true;
+            }
+            return false;
+        }
+        return false;
     }
 
     partial void OnModelCreatingPartial(ModelBuilder modelBuilder);

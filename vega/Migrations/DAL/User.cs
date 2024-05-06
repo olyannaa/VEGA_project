@@ -15,7 +15,7 @@ public partial class User
 
     public virtual AreaUser? AreasUser { get; set; }
 
-    public virtual ICollection<RoleUser> RoleUsers { get; } = null!;
+    public virtual RoleUser RoleUser { get; } = null!;
 
     public virtual ICollection<OrderStep> OrderSteps { get; set; } = null!;
 }

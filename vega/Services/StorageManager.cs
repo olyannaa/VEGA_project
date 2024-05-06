@@ -12,7 +12,7 @@ public class StorageManager : IStorageManager
         _minioClient = minioClient;
     }
 
-    public async Task CreateOrderAsync(IFormFileCollection files, string kks, string bucketName, string? description, string? role)
+    public async Task CreateOrderAsync(IFormFileCollection files, string kks, string bucketName, string? description, string? step)
     { 
         if (kks == null)
         {
@@ -21,7 +21,7 @@ public class StorageManager : IStorageManager
         foreach (IFormFile file in files)
         {
             var fileStream = file.OpenReadStream();
-            await UploadFileAsync(fileStream, kks, bucketName, file.ContentType, file.FileName, role);
+            await UploadFileAsync(fileStream, kks, bucketName, file.ContentType, file.FileName, step);
         }
     }
 
@@ -41,12 +41,12 @@ public class StorageManager : IStorageManager
         await _minioClient.RemoveObjectsAsync(removeArgs).ConfigureAwait(false);
     }
 
-    public async Task UploadFileAsync(Stream fileStream, string directory, string bucketName, string contentType, string name, string? role = null)
+    public async Task UploadFileAsync(Stream fileStream, string directory, string bucketName, string contentType, string name, string? step = null)
     {
-        var updRole = role != null ? role + '/' : null;
+        var updStep = step != null ? step + '/' : null;
         var putObjectArgs = new PutObjectArgs()
             .WithBucket(bucketName)
-            .WithObject($"{directory}/{updRole}{name}")
+            .WithObject($"{directory}/{updStep}{name}")
             .WithStreamData(fileStream)
             .WithObjectSize(fileStream.Length)
             .WithContentType(contentType);

@@ -10,4 +10,6 @@ public partial class Role
     public string? Name { get; set; }
 
     public virtual ICollection<RoleUser> RoleUsers { get; } = null!;
+
+    public virtual StepRole StepRole { get; } = null!;
 }

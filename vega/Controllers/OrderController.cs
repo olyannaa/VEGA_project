@@ -51,7 +51,7 @@ namespace vega.Controllers
                         OrderId = created_order.Id,
                         StepId = _db.Steps.AsNoTracking().First(e => e.Name == Steps.Entry).Id,
                         FileName = file.FileName,
-                        Path = $"{order.KKS}/{Roles.Documentation}/{file.FileName}",
+                        Path = $"{order.KKS}/{Steps.Entry}/{file.FileName}",
                         UploadDate = date
                     });
                     _db.SaveChanges();
@@ -64,16 +64,18 @@ namespace vega.Controllers
                         StepId = step.Id,
                         OrderId = created_order.Id,
                         IsCompleted = step.Name == Steps.Entry ? true : false,
-                        UserId = _db.Users.First(e => e.Id == 35).Id, // переписать
+                        UserId = step.Id == 3 ? null : _db.Users.First(e => e.RoleUser.Role.StepRole.StepId == step.Id).Id,
                         Comment = step.Name == Steps.Entry ? order.Description : null
                     };
-                    if (orderStep.StepId == 5 || orderStep.StepId == 4)
+                    if (step.Id == 5 || step.Id == 4)
                     {
                         orderStep.ParentId = _db.OrderSteps.First(e => e.OrderId == created_order.Id && e.Step.Name == Steps.DDDev).Id;
                     }
                     _db.Add(orderStep);
                     _db.SaveChanges();
                 }
+
+                await _storageManager.CreateOrderAsync(files, order.KKS, "vega-orders-bucket", order.Description, Steps.Entry);
                 transaction.Commit();
             }
             catch (Exception e)
@@ -83,7 +85,6 @@ namespace vega.Controllers
                 return BadRequest(e.Message);
             }
 
-            await _storageManager.CreateOrderAsync(files, order.KKS, "vega-orders-bucket", order.Description, Roles.Documentation);
             return Ok();
         }
         
@@ -190,17 +191,16 @@ namespace vega.Controllers
             var responseData = new Dictionary<int, object>();
             foreach (var order in _db.Orders.AsNoTracking().OrderBy(e => e.OrderSteps.First(e => e.IsCompleted == true).StepId).Skip(8 * (page - 1)).Take(8).ToArray())
             {
-
                 var orderStepsInfo = _db.OrderSteps.AsNoTracking()
                                                 .Where(e => e.OrderId == order.Id && e.Parent == null)
                                                 .Select(e => new Dictionary<string, object?>()
                                                 {
                                                     {"step_id", e.StepId},
                                                     {"step_name", e.Step.Name},
-                                                    {"responsible", new Dictionary<string, object>{
+                                                    {"responsible", e.User != null ? new Dictionary<string, object>{
                                                         {"login", e.User.Login},
                                                         {"name", e.User.FullName}
-                                                    }},
+                                                    } : null},
                                                     {"is_completed", e.IsCompleted},
                                                     {"comment", e.Comment},
                                                     {"files", _db.OrderFiles.Where(e2 => e2.OrderId == order.Id && e2.StepId == e.StepId)
@@ -213,14 +213,14 @@ namespace vega.Controllers
                                                                             })
                                                                             .ToArray()
                                                     },
-                                                    {"children", e.Children.Select(e => new Dictionary<string, object?>()
+                                                    {"children", e.Children != null ? e.Children.Select(e => new Dictionary<string, object?>()
                                                         {
                                                             {"step_id", e.StepId},
                                                             {"step_name", e.Step.Name},
-                                                            {"responsible", new Dictionary<string, object>{
+                                                            {"responsible", e.User != null ? new Dictionary<string, object>{
                                                                 {"login", e.User.Login},
                                                                 {"name", e.User.FullName}
-                                                            }},
+                                                            } : null},
                                                             {"is_completed", e.IsCompleted},
                                                             {"comment", e.Comment},
                                                             {"files", _db.OrderFiles.Where(e2 => e2.OrderId == order.Id && e2.StepId == e.StepId)
@@ -232,7 +232,7 @@ namespace vega.Controllers
                                                                                         {"is_needed_to_change", e.IsNeededToChange}
                                                                                     })
                                                                                     .ToArray()}
-                                                        })
+                                                        }) : null
                                                     }
                                                 })
                                                 .ToArray();
@@ -277,6 +277,69 @@ namespace vega.Controllers
                 responseData.TryAdd(order.Id, new Dictionary<string, object>{{"kks", kks}, {"files_info", orderFilesInfo}});
             }
             return Ok(responseData);
+        }
+
+        /// <summary>
+        /// Returns step names.
+        /// </summary>
+        [HttpGet("steps")]
+        public ActionResult GetOrderSteps()
+        {
+            var kks = _db.Steps.ToDictionary(e => e.Id, e => e.Name);
+            return Ok(kks);
+        }
+
+        /// <summary>
+        /// Completes step and uploads files.
+        /// </summary>
+        /// <response code="200">changes made</response>
+        [HttpPost("steps")]
+        public async Task<ActionResult> UpdateOrderStep(IFormFileCollection files, [FromForm] UpdateStepModel model)
+        {
+            var login = HttpContext.User.Claims.FirstOrDefault(value => value.Type == VegaClaimTypes.Login)?.Value;
+            var order = _db.Orders.FirstOrDefault(e => e.KKS == model.KKS);
+            var step = _db.Steps.AsNoTracking().FirstOrDefault(e => e.Id == model.StepId);
+            if (order == null || step == null)
+            {
+                return BadRequest();
+            }
+            var date = DateTime.UtcNow.Date;
+            using var transaction = _db.Database.BeginTransaction();
+            try
+            {   
+                var orderStep = _db.OrderSteps.First(e => e.OrderId == order.Id && e.StepId == model.StepId && e.User != null && e.User.Login == login);
+                orderStep.IsCompleted = true;
+                if (model.Description != null)
+                {
+                    orderStep.Comment = model.Description;
+                }
+                _db.TryUpdateParentalStepCompletion(orderStep);
+                _db.SaveChanges();
+
+                foreach (IFormFile file in files)
+                {
+                    _db.Add(new OrderFile()
+                    { 
+                        OrderId = order.Id,
+                        StepId = model.StepId,
+                        FileName = file.FileName,
+                        Path = $"{model.KKS}/{step.Name}/{file.FileName}",
+                        UploadDate = date
+                    });
+                    _db.SaveChanges();
+                    await _storageManager.UploadFileAsync(file.OpenReadStream(), model.KKS, "vega-orders-bucket", file.ContentType, file.FileName, step.Name);
+                }
+
+                transaction.Commit();
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+                transaction.Rollback();
+                return BadRequest(e.Message);
+            }
+
+            return Ok();
         }
 
         /// <summary>
