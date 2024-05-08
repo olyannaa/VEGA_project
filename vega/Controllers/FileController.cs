@@ -12,33 +12,51 @@ namespace vega.Controllers
     public class FileController : ControllerBase
     {
         private readonly ILogger<ConfigController> _logger;
-        private readonly VegaContext _db;
+        private readonly IStorageManager _storageManager;
         private readonly IFileConverter _fileConverter;
 
-        public FileController(ILogger<ConfigController> logger, VegaContext context, IFileConverter fileConverter)
+        private readonly VegaContext _db;
+
+        public FileController(ILogger<ConfigController> logger, VegaContext context, IStorageManager storageManager, IFileConverter fileConverter)
         {
             _logger = logger;
-            _db = context;
+            _storageManager = storageManager;
             _fileConverter = fileConverter;
+            _db = context;
         }
-
+        /// <summary>
+        /// Converts file to pdf and returns it by its path.
+        /// </summary>
+        /// <remarks>
+        /// This request is supposed to handle only with docx and excel files, other extensions is not supported
+        /// </remarks>
+        /// <returns>pdf file</returns>
         [HttpPost("convert-to-pdf")]
-        public ActionResult ConvertToPdf(IFormFile file)
+        public async Task<ActionResult> ConvertToPdf([FromQuery] string path)
         {
-            if (file.ContentType == "application/msword"
-                || file.ContentType == "application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+            var file = _db.OrderFiles.Where(e => e.Path == path).FirstOrDefault();
+            if (file == null)
+            {
+                return NotFound();
+            }
+
+            var (fileStream, contentType) = await _storageManager.GetFile(file.Path, "vega-orders-bucket");
+
+            if (contentType == "application/msword"
+                || contentType == "application/vnd.openxmlformats-officedocument.wordprocessingml.document")
             {
                 var tempPath = Path.Combine(Path.GetTempPath(), file.FileName);
-                var buffer = new byte[file.Length];
-                file.OpenReadStream().Read(buffer);
+                var buffer = new byte[fileStream.Length];
+                fileStream.Read(buffer);
+                fileStream.Close();
                 System.IO.File.WriteAllBytes(tempPath, buffer);
                 var outputFs = _fileConverter.ConvertDocToPdf(tempPath);
 
                 return new FileStreamResult(outputFs, "application/pdf");
 
             }
-            else if (file.ContentType == "application/vnd.ms-excel" 
-                || file.ContentType == "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+            else if (contentType == "application/vnd.ms-excel" 
+                || contentType == "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
             {
                 return Ok("ToDo");
             }

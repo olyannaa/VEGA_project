@@ -55,21 +55,21 @@ public class StorageManager : IStorageManager
         fileStream.Close();
     }
 
-    public async Task<(FileStream stream, string contentType)> GetFile(string fileName, string bucketName)
+    public async Task<(FileStream stream, string contentType)> GetFile(string filePath, string bucketName)
     {
-        var filePath = Path.Combine(Path.GetTempPath(), fileName.Split("/").Last());
-        using (var fileStream = new FileStream(filePath, FileMode.Create))
+        var tempFilePath = Path.Combine(Path.GetTempPath(), filePath.Split("/").Last());
+        using (var fileStream = new FileStream(tempFilePath, FileMode.Create))
         {
             try
             {
                 StatObjectArgs statObjectArgs = new StatObjectArgs()
                                                 .WithBucket(bucketName)
-                                                .WithObject(fileName);
+                                                .WithObject(filePath);
                 await _minioClient.StatObjectAsync(statObjectArgs);
 
                 GetObjectArgs getObjectArgs = new GetObjectArgs()
                                               .WithBucket(bucketName)
-                                              .WithObject(fileName)
+                                              .WithObject(filePath)
                                               .WithCallbackStream((stream) =>
                                                    {
                                                        stream.CopyTo(fileStream);
@@ -86,11 +86,11 @@ public class StorageManager : IStorageManager
 
         var provider = new FileExtensionContentTypeProvider();
         string? contentType;
-        if (!provider.TryGetContentType(fileName, out contentType))
+        if (!provider.TryGetContentType(filePath, out contentType))
         {
             contentType = "application/octet-stream";
         }
-        var stream = new FileStream(filePath, FileMode.Open);
+        var stream = new FileStream(tempFilePath, FileMode.Open);
         return (stream, contentType);
     }
 }
