@@ -1,4 +1,5 @@
 
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -172,13 +173,20 @@ namespace vega.Controllers
         [HttpGet("pages")]
         public ActionResult GetPagesCount()
         {
-            var count = _db.Orders.Count() / 8 + 1;
+            var role = HttpContext.User.Claims.First(value => value.Type == ClaimTypes.Role).Value;
+            int userId;
+            Int32.TryParse(HttpContext.User.Claims.First(value => value.Type == VegaClaimTypes.Id).Value, out userId);
+            var isAdmin = role == Roles.Admin;
+            var count = _db.Orders.Where(e => isAdmin || e.OrderSteps.Any(e => e.UserId == userId)).Count() / 8 + 1;
             return Ok(count);
         }
 
         /// <summary>
         /// Returns information about orders by pages.
         /// </summary>
+        /// <remarks>
+        /// Provided information depends on logged in user's role. Full order list for admin, otherwise only orders related to user.
+        /// </remarks>
         /// <response code="200">Returns orders' information</response>
         [HttpGet("info")]
         public ActionResult GetStepsInfo([FromQuery] int page)
@@ -189,7 +197,18 @@ namespace vega.Controllers
             }
 
             var responseData = new Dictionary<int, object>();
-            foreach (var order in _db.Orders.AsNoTracking().OrderBy(e => e.OrderSteps.First(e => e.IsCompleted == true).StepId).Skip(8 * (page - 1)).Take(8).ToArray())
+            var role = HttpContext.User.Claims.First(value => value.Type == ClaimTypes.Role).Value;
+            int userId;
+            Int32.TryParse(HttpContext.User.Claims.First(value => value.Type == VegaClaimTypes.Id).Value, out userId);
+            var isAdmin = role == Roles.Admin;
+            var orders = _db.Orders.AsNoTracking()
+                                .OrderBy(e => e.OrderSteps.First(e => e.IsCompleted == true).StepId)
+                                .Where(e => isAdmin || e.OrderSteps.Any(e => e.UserId == userId))
+                                .Skip(8 * (page - 1))
+                                .Take(8)
+                                .ToArray();
+
+            foreach (var order in orders)
             {
                 var orderStepsInfo = _db.OrderSteps.AsNoTracking()
                                                 .Where(e => e.OrderId == order.Id && e.Parent == null)
