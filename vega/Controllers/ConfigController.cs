@@ -126,7 +126,7 @@ namespace vega.Controllers
         /// </summary>
         /// <returns>Returns dictionary of roles</returns>
         [HttpGet("role")]
-        public async Task<ActionResult<IDictionary<int, string?>>> GetRolesInfo()
+        public async Task<ActionResult<IDictionary<int, string>>> GetRolesInfo()
         {
             return await _db.Roles
                 .Select(role => new {role.Id, role.Name})
