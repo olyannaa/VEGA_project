@@ -1,18 +1,23 @@
 
 using System.Drawing.Imaging;
+using System.Text.Json;
 using System.Xml.Linq;
 using DinkToPdf;
 using DinkToPdf.Contracts;
 using DocumentFormat.OpenXml.Packaging;
+using OfficeOpenXml;
 using OpenXmlPowerTools;
 
 public class FileConverter : IFileConverter
 {
     IConverter _pdfConverter;
 
-    public FileConverter(IConverter pdfConverter)
+    ILogger _logger;
+
+    public FileConverter(IConverter pdfConverter, ILogger<TokenManager> logger)
     {
         _pdfConverter = pdfConverter;
+        _logger = logger;
     }
 
     public FileStream ConvertDocToPdf(string filePath)
@@ -60,10 +65,16 @@ public class FileConverter : IFileConverter
         return new FileStream(tempPath, FileMode.Open);
     }
 
-    public string ConvertXlsxToJson(string filePath)
+    public bool TryConvertXlsxToJson(string filePath, out string json)
     {
-        //Todo
-        return String.Empty;
+        var excelData = ReadExcelFile(filePath);
+        json = String.Empty;
+        if (excelData != null)
+        {
+            json = JsonSerializer.Serialize(excelData);
+            return true;
+        }
+        return false;
     }
 
     public FileStream ConvertXlsxToPdf(string filePath)
@@ -179,5 +190,47 @@ public class FileConverter : IFileConverter
         {
             return "The file is either open, please close it or contains corrupt data";
         }
+    }
+
+    static private Dictionary<int, OrderStorageModel>? ReadExcelFile(string filePath)
+    {
+        var data = new Dictionary<int, OrderStorageModel>();
+
+        try
+        {
+            using (var package = new ExcelPackage(new FileInfo(filePath)))
+            {
+                var worksheet = package.Workbook.Worksheets.FirstOrDefault();
+
+                if (worksheet != null)
+                {
+                    var rowCount = worksheet.Dimension.Rows;
+
+                    for (int row = 2; row <= rowCount; row++) 
+                    {
+                        var rowData = new OrderStorageModel()
+                        {
+                            Designation = worksheet.Cells[row, 4].Text,
+                            Name = worksheet.Cells[row, 5].Text,
+                            Count = worksheet.Cells[row, 6].Text,
+                            Measure = worksheet.Cells[row, 7].Text,
+                            Material = worksheet.Cells[row, 1].Text,
+                            ObjectType = worksheet.Cells[row, 8].Text
+                        };
+                        data.Add(row-1,rowData);
+                    }
+                }
+                else
+                {
+                    return null;
+                }
+            }
+        }
+        catch (Exception)
+        {
+            return null;
+        }
+
+        return data;
     }
 }

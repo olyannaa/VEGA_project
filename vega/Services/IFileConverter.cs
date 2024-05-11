@@ -4,5 +4,5 @@ public interface IFileConverter
 
     public FileStream ConvertXlsxToPdf(string filePath);
 
-    public string ConvertXlsxToJson(string filePath);
+    public bool TryConvertXlsxToJson(string filePath, out string json);
 }
