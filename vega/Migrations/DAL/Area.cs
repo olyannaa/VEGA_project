@@ -9,5 +9,5 @@ public partial class Area
 
     public string? AreaName { get; set; }
 
-    public virtual ICollection<AreaUser> AreasUsers { get; } = new List<AreaUser>();
+    public virtual ICollection<AreaUser> AreaUsers { get; } = new List<AreaUser>();
 }

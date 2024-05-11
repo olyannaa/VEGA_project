@@ -38,6 +38,10 @@ public partial class VegaContext : DbContext
 
     public virtual DbSet<StepRole> StepRoles { get; set;}
 
+    public virtual DbSet<Privilege> Privileges { get; set; }
+
+    public virtual DbSet<RolePrivilege> RolePriveleges { get; set; }
+
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -72,14 +76,50 @@ public partial class VegaContext : DbContext
                 .HasColumnName("user_id");
             entity.Property(e => e.AreaId).HasColumnName("area_id");
 
-            entity.HasOne(d => d.Area).WithMany(p => p.AreasUsers)
+            entity.HasOne(d => d.Area).WithMany(p => p.AreaUsers)
                 .HasForeignKey(d => d.AreaId)
                 .HasConstraintName("areas_users_area_id_fkey");
 
-            entity.HasOne(d => d.User).WithOne(p => p.AreasUser)
+            entity.HasOne(d => d.User).WithOne(p => p.AreaUser)
                 .HasForeignKey<AreaUser>(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("areas_users_user_id_fkey");
+        });
+
+        modelBuilder.Entity<Privilege>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("id");
+
+            entity.ToTable("privileges");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.Name)
+                .HasMaxLength(50)
+                .HasColumnName("privilege");
+            entity.Property(e => e.Description)
+                .HasMaxLength(100)
+                .HasColumnName("description");
+        });
+
+        modelBuilder.Entity<RolePrivilege>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("id");
+
+            entity.ToTable("roles_privileges");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.RoleId).HasColumnName("role_id");
+            entity.Property(e => e.PrivilegeId).HasColumnName("privilege_id");
+
+            entity.HasOne(d => d.Role).WithMany(p => p.RolePrivileges)
+                .HasForeignKey(d => d.RoleId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("roles_privileges_role_id_fkey");
+
+            entity.HasOne(d => d.Privilege).WithMany(p => p.Roles)
+                .HasForeignKey(d => d.PrivilegeId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("roles_privileges_privilege_id_fkey");
         });
 
         modelBuilder.Entity<Role>(entity =>

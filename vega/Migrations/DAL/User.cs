@@ -13,7 +13,7 @@ public partial class User
     
     public string FullName { get; set;} = null!;
 
-    public virtual AreaUser? AreasUser { get; set; }
+    public virtual AreaUser? AreaUser { get; set; }
 
     public virtual RoleUser RoleUser { get; } = null!;
 
