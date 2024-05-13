@@ -1,5 +1,7 @@
 
+using System.Diagnostics.Eventing.Reader;
 using System.Security.Claims;
+using CommunityToolkit.HighPerformance.Helpers;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -320,13 +322,20 @@ namespace vega.Controllers
             var step = _db.Steps.AsNoTracking().FirstOrDefault(e => e.Id == model.StepId);
             if (order == null || step == null)
             {
-                return BadRequest();
+                return NotFound();
             }
             var date = DateTime.UtcNow.Date;
             using var transaction = _db.Database.BeginTransaction();
             try
             {   
-                var orderStep = _db.OrderSteps.First(e => e.OrderId == order.Id && e.StepId == model.StepId && e.User != null && e.User.Login == login);
+                var orderStep = _db.OrderSteps.FirstOrDefault(e => e.OrderId == order.Id && e.StepId == model.StepId && e.User != null && e.User.Login == login);
+
+                if (orderStep == null)
+                {
+                    transaction.Rollback();
+                    return Forbid();
+                }
+
                 orderStep.IsCompleted = true;
                 if (model.Description != null)
                 {
@@ -334,6 +343,13 @@ namespace vega.Controllers
                 }
                 _db.TryUpdateParentalStepCompletion(orderStep);
                 _db.SaveChanges();
+                
+                if (model.IsApproved != null && !(bool) model.IsApproved && step.Name == Steps.Approval)
+                {
+                    await _db.OrderSteps.Where(e => e.OrderId == order.Id && e.StepId <= step.Id).ForEachAsync(e => e.IsCompleted = false);
+                    await _db.OrderFiles.Where(e => e.OrderId == order.Id && e.StepId < step.Id).ForEachAsync(e => e.IsNeededToChange = true);
+                    _db.SaveChanges();
+                }
 
                 foreach (IFormFile file in files)
                 {
@@ -345,6 +361,8 @@ namespace vega.Controllers
                         Path = $"{model.KKS}/{step.Name}/{file.FileName}",
                         UploadDate = date
                     });
+                    _db.SaveChanges();
+                    await _db.OrderFiles.Where(e => e.OrderId == order.Id && step.Id == orderStep.Id).ForEachAsync(e => e.IsNeededToChange = false);
                     _db.SaveChanges();
                     await _storageManager.UploadFileAsync(file.OpenReadStream(), model.KKS, "vega-orders-bucket", file.ContentType, file.FileName, step.Name);
                 }
