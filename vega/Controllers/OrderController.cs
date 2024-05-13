@@ -313,7 +313,15 @@ namespace vega.Controllers
         /// <summary>
         /// Completes step and uploads files.
         /// </summary>
+        /// <remarks>
+        /// This request is used to manage specified order, to update step info: files, comments, completion. \
+        /// There is no possibility to update step, if user is not responsible for it. \
+        /// IsApproved attribute is needed for approval step to determine whether current order must revert to first step.
+        /// It's optional null == false.
+        /// </remarks>
         /// <response code="200">changes made</response>
+        /// <response code="403">User have no rights to update step</response>
+        /// <response code="404">specified order or step is not found</response>
         [HttpPost("steps")]
         public async Task<ActionResult> UpdateOrderStep(IFormFileCollection files, [FromForm] UpdateStepModel model)
         {
