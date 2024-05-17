@@ -117,12 +117,17 @@ namespace vega.Controllers
             }
 
             var steps = _db.OrderSteps.Where(e => e.OrderId == order.Id).ToList(); 
+            var components = _db.Storage.Where(e => e.OrderId == order.Id).ToList();
             using var transaction = _db.Database.BeginTransaction();
             try
             {
                 foreach (var file in files)
                 {
                     _db.Remove(file);
+                }
+                foreach (var component in components)
+                {
+                    _db.Remove(component);
                 }
                 foreach (var step in steps)
                 {
