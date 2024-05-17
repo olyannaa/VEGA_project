@@ -1,7 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿
 using Microsoft.EntityFrameworkCore;
-using Microsoft.VisualBasic;
 
 namespace vega;
 
@@ -41,6 +39,8 @@ public partial class VegaContext : DbContext
     public virtual DbSet<Privilege> Privileges { get; set; }
 
     public virtual DbSet<RolePrivilege> RolePriveleges { get; set; }
+
+    public virtual DbSet<Component> Storage { get; set; }
 
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
@@ -290,8 +290,31 @@ public partial class VegaContext : DbContext
             
         });
 
+        modelBuilder.Entity<Component>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("storage_pk");
+
+            entity.ToTable("storage");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.OrderId).HasColumnName("order_id");
+            entity.Property(e => e.Designation).HasColumnName("designation");
+            entity.Property(e => e.Name).HasColumnName("name");
+            entity.Property(e => e.Count).HasColumnName("count");
+            entity.Property(e => e.Measure).HasColumnName("measure");
+            entity.Property(e => e.Material).HasColumnName("material");
+            entity.Property(e => e.ObjectType).HasColumnName("object_type");
+
+            entity.HasOne(d => d.Order).WithMany(p => p.Storage)
+                .HasForeignKey(d => d.OrderId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("storage_orders_fk");
+        });
+
         OnModelCreatingPartial(modelBuilder);
     }
+
+    
 
     public bool TryUpdateParentalStepCompletion(OrderStep initOrderStep)
     {

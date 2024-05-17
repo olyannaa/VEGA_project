@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 
 
 namespace vega.Controllers
@@ -19,11 +20,14 @@ namespace vega.Controllers
         private readonly VegaContext _db;
         private readonly IStorageManager _storageManager;
 
-        public OrderController(ILogger<ConfigController> logger, VegaContext context, IStorageManager storageManager)
+        private readonly IFileConverter _converter;
+
+        public OrderController(ILogger<ConfigController> logger, VegaContext context, IStorageManager storageManager, IFileConverter coverter)
         {
             _logger = logger;
             _db = context;
             _storageManager = storageManager;
+            _converter = coverter;
         }
 
         /// <summary>
@@ -257,12 +261,23 @@ namespace vega.Controllers
                                                     }
                                                 })
                                                 .ToArray();
-                
+                var componentInfo = _db.Storage.Where(e => e.OrderId == order.Id)
+                                                .ToDictionary(e => e.Id, e => 
+                                                    new Dictionary<string, object?>()
+                                                    {
+                                                        {"designation", e.Designation},
+                                                        {"name", e.Name},
+                                                        {"count", e.Count},
+                                                        {"measure", e.Measure},
+                                                        {"material", e.Material},
+                                                        {"objectType", e.ObjectType}
+                                                    });
                 responseData.TryAdd(order.Id, new Dictionary<string, object>
                 {
                     {"kks", order.KKS}, 
                     {"is_completed", _db.OrderSteps.AsNoTracking().Where(e => e.OrderId == order.Id).All(e => e.IsCompleted)}, 
-                    {"steps_info", orderStepsInfo}
+                    {"steps_info", orderStepsInfo},
+                    {"component_info", componentInfo}
                 });
             }
             return Ok(responseData);
@@ -359,6 +374,46 @@ namespace vega.Controllers
                     _db.SaveChanges();
                 }
 
+                if (model.StepId == 8)
+                {
+                    if (files.Count > 1)
+                    {
+                        throw new Exception("Tried to attach more than 1 file");
+                    }
+                    var file= files.First();
+                    var fileSteam = file.OpenReadStream();
+                    var tempPath = await _storageManager.SaveTempFileAsync(fileSteam, file.Name);
+                    string? json;
+                    if (!_converter.TryConvertXlsxToJson(tempPath, out json))
+                    {
+                        throw new Exception("Can't read excel file");
+                    }
+                    _storageManager.TryDeleteTempFile(tempPath);
+                    var data = JsonSerializer.Deserialize(json, typeof(Dictionary<int, OrderStorageModel>)) as Dictionary<int, OrderStorageModel>;
+                    if (data == null)
+                    {
+                        throw new Exception("Can't read excel file");
+                    }
+                    foreach (var key in data.Keys)
+                    {
+                        var jsonComponent = data[key];
+                        int count;
+                        Int32.TryParse(jsonComponent.Count, out count);
+                        var component = new Component()
+                        {
+                            OrderId = order.Id,
+                            Designation = jsonComponent.Designation,
+                            Name = jsonComponent.Name,
+                            Count = count,
+                            Measure = jsonComponent.Measure,
+                            Material = jsonComponent.Material,
+                            ObjectType = jsonComponent.ObjectType
+                        };
+                        _db.Add(component);
+                    }
+                    _db.SaveChanges();
+                }
+
                 foreach (IFormFile file in files)
                 {
                     _db.Add(new OrderFile()
@@ -379,7 +434,6 @@ namespace vega.Controllers
             }
             catch (Exception e)
             {
-                Console.WriteLine(e.Message);
                 transaction.Rollback();
                 return BadRequest(e.Message);
             }

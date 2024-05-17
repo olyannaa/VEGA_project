@@ -93,4 +93,24 @@ public class StorageManager : IStorageManager
         var stream = new FileStream(tempFilePath, FileMode.Open);
         return (stream, contentType);
     }
+
+    public async Task<string> SaveTempFileAsync(Stream fileStream, string fileName)
+    {
+        var tempPath = Path.Combine(Path.GetTempPath(), fileName);
+        var buffer = new byte[fileStream.Length];
+        fileStream.Read(buffer);
+        fileStream.Close();
+        await File.WriteAllBytesAsync(tempPath, buffer);
+        return tempPath;
+    }
+
+    public bool TryDeleteTempFile(string filePath)
+    {
+        if (File.Exists(filePath))
+        {
+            File.Delete(filePath);
+            return true;
+        }
+        return false;
+    }
 }

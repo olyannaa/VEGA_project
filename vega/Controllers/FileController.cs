@@ -45,11 +45,7 @@ namespace vega.Controllers
             if (contentType == "application/msword"
                 || contentType == "application/vnd.openxmlformats-officedocument.wordprocessingml.document")
             {
-                var tempPath = Path.Combine(Path.GetTempPath(), file.FileName);
-                var buffer = new byte[fileStream.Length];
-                fileStream.Read(buffer);
-                fileStream.Close();
-                System.IO.File.WriteAllBytes(tempPath, buffer);
+                var tempPath = await _storageManager.SaveTempFileAsync(fileStream, file.FileName);
                 var outputFs = _fileConverter.ConvertDocToPdf(tempPath);
 
                 return new FileStreamResult(outputFs, "application/pdf");

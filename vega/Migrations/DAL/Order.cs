@@ -9,4 +9,6 @@ public partial class Order
     public virtual ICollection<OrderFile> OrderFiles { get; set; } = null!;
 
     public virtual ICollection<OrderStep> OrderSteps { get; set; } = null!;
+
+    public virtual ICollection<Component>? Storage {get; set;}
 }

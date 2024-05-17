@@ -181,7 +181,7 @@ public class FileConverter : IFileConverter
                     var htmlElement = WmlToHtmlConverter.ConvertToHtml(wDoc, settings);
                     var html = new XDocument(new XDocumentType("html", null, null, null),
                                                                                 htmlElement);
-                    var htmlString = html.ToString(System.Xml.Linq.SaveOptions.DisableFormatting);
+                    var htmlString = html.ToString(SaveOptions.DisableFormatting);
                     return htmlString;
                 }
             }
@@ -206,7 +206,7 @@ public class FileConverter : IFileConverter
                 {
                     var rowCount = worksheet.Dimension.Rows;
 
-                    for (int row = 2; row <= rowCount; row++) 
+                    for (var row = 2; row <= rowCount; row++) 
                     {
                         var rowData = new OrderStorageModel()
                         {
@@ -217,7 +217,9 @@ public class FileConverter : IFileConverter
                             Material = worksheet.Cells[row, 1].Text,
                             ObjectType = worksheet.Cells[row, 8].Text
                         };
-                        data.Add(row-1,rowData);
+                        int position;
+                        Int32.TryParse(worksheet.Cells[row, 3].Text, out position);
+                        data.Add(position,rowData);
                     }
                 }
                 else
