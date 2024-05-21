@@ -421,10 +421,6 @@ namespace vega.Controllers
                 }
                 if (step.Name == Steps.Storage)
                 {
-                    if (model.Storage == null)
-                    {
-                        throw new Exception("No info about components");
-                    }
                     if (model.IsCompleted == true)
                     {
                         await _db.Storage.Where(e => e.OrderId == order.Id).ForEachAsync(e => e.Amount = e.Count ?? 0);
@@ -433,6 +429,10 @@ namespace vega.Controllers
                     }
                     else
                     {
+                        if (model.Storage == null)
+                        {
+                            throw new Exception("No info about components");
+                        }
                         await _db.Storage.Where(e => e.OrderId == order.Id).ForEachAsync(e => e.Amount = model.Storage[e.Amount]);
                         _db.SaveChanges();
                     }
