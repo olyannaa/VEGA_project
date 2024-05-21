@@ -10,7 +10,9 @@ public partial class Component
 
     public string? Name { get; set; }
 
-    public int Count { get; set; }
+    public int Amount { get; set; }
+
+    public int? Count { get; set; }
 
     public string? Measure { get; set; }
 

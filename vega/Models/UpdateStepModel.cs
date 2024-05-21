@@ -11,4 +11,8 @@ public class UpdateStepModel
     public string? Description { get; set; }
 
     public bool? IsApproved { get; set;}
+
+    public bool? IsCompleted { get; set; }
+
+    public Dictionary<int, int>? Storage { get; set; }
 }

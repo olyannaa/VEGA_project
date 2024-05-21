@@ -301,6 +301,7 @@ public partial class VegaContext : DbContext
             entity.Property(e => e.Designation).HasColumnName("designation");
             entity.Property(e => e.Name).HasColumnName("name");
             entity.Property(e => e.Count).HasColumnName("count");
+            entity.Property(e => e.Amount).HasColumnName("amount");
             entity.Property(e => e.Measure).HasColumnName("measure");
             entity.Property(e => e.Material).HasColumnName("material");
             entity.Property(e => e.ObjectType).HasColumnName("object_type");

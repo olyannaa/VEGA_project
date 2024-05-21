@@ -208,11 +208,13 @@ public class FileConverter : IFileConverter
 
                     for (var row = 2; row <= rowCount; row++) 
                     {
+                        int count;
+                        Int32.TryParse(worksheet.Cells[row, 6].Text, out count);
                         var rowData = new OrderStorageModel()
                         {
                             Designation = worksheet.Cells[row, 4].Text,
                             Name = worksheet.Cells[row, 5].Text,
-                            Count = worksheet.Cells[row, 6].Text,
+                            Count = count,
                             Measure = worksheet.Cells[row, 7].Text,
                             Material = worksheet.Cells[row, 1].Text,
                             ObjectType = worksheet.Cells[row, 8].Text

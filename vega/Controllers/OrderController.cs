@@ -106,7 +106,7 @@ namespace vega.Controllers
             var order = _db.Orders.FirstOrDefault(e => e.KKS == kks);
             if (order == null)
             {
-                return BadRequest("Order is not found");
+                return NotFound("Order is not found");
             }
             var files = _db.OrderFiles.Where(e => e.OrderId == order.Id).ToList();
             var filePaths = files.Select(e => e.Path).ToList();
@@ -363,8 +363,10 @@ namespace vega.Controllers
                     transaction.Rollback();
                     return Forbid();
                 }
-
-                orderStep.IsCompleted = true;
+                if (orderStep.StepId != 9)
+                {
+                    orderStep.IsCompleted = true;
+                }
                 if (model.Description != null)
                 {
                     orderStep.Comment = model.Description;
@@ -379,7 +381,7 @@ namespace vega.Controllers
                     _db.SaveChanges();
                 }
 
-                if (model.StepId == 8)
+                if (step.Name == Steps.Supply)
                 {
                     if (files.Count > 1)
                     {
@@ -402,14 +404,13 @@ namespace vega.Controllers
                     foreach (var key in data.Keys)
                     {
                         var jsonComponent = data[key];
-                        int count;
-                        Int32.TryParse(jsonComponent.Count, out count);
                         var component = new Component()
                         {
                             OrderId = order.Id,
                             Designation = jsonComponent.Designation,
                             Name = jsonComponent.Name,
-                            Count = count,
+                            Count = jsonComponent.Count,
+                            Amount = 0,
                             Measure = jsonComponent.Measure,
                             Material = jsonComponent.Material,
                             ObjectType = jsonComponent.ObjectType
@@ -417,6 +418,24 @@ namespace vega.Controllers
                         _db.Add(component);
                     }
                     _db.SaveChanges();
+                }
+                if (step.Name == Steps.Storage)
+                {
+                    if (model.Storage == null)
+                    {
+                        throw new Exception("No info about components");
+                    }
+                    if (model.IsCompleted == true)
+                    {
+                        await _db.Storage.Where(e => e.OrderId == order.Id).ForEachAsync(e => e.Amount = e.Count ?? 0);
+                        orderStep.IsCompleted = true;
+                        _db.SaveChanges();
+                    }
+                    else
+                    {
+                        await _db.Storage.Where(e => e.OrderId == order.Id).ForEachAsync(e => e.Amount = model.Storage[e.Amount]);
+                        _db.SaveChanges();
+                    }
                 }
 
                 foreach (IFormFile file in files)
