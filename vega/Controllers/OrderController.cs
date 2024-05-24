@@ -272,6 +272,7 @@ namespace vega.Controllers
                                                     {
                                                         {"designation", e.Designation},
                                                         {"name", e.Name},
+                                                        {"amount", e.Amount},
                                                         {"count", e.Count},
                                                         {"measure", e.Measure},
                                                         {"material", e.Material},
