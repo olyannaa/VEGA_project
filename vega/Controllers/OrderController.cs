@@ -434,7 +434,10 @@ namespace vega.Controllers
                         {
                             throw new Exception("No info about components");
                         }
-                        await _db.Storage.Where(e => e.OrderId == order.Id).ForEachAsync(e => e.Amount = model.Storage[e.Amount]);
+                        foreach (var index in model.Storage.Keys)
+                        {
+                            await _db.Storage.Where(e => e.OrderId == order.Id && e.Id == index).ForEachAsync(e => e.Amount = model.Storage[index]);
+                        }
                         _db.SaveChanges();
                     }
                 }
