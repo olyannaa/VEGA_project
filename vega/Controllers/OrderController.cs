@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 
 namespace vega.Controllers
@@ -430,13 +431,21 @@ namespace vega.Controllers
                     }
                     else
                     {
-                        if (model.Storage == null)
+                        //todo: автоматический парсинг
+                        var form = HttpContext.Request.Form;
+                        var storage = JsonSerializer.Deserialize(form["storage"], typeof(Dictionary<string, string>)) as Dictionary<string, string>;
+                        if (storage == null || storage.Count == 0)
                         {
                             throw new Exception("No info about components");
                         }
-                        foreach (var index in model.Storage.Keys)
+                    
+                        foreach (var index in storage)
                         {
-                            await _db.Storage.Where(e => e.OrderId == order.Id && e.Id == index).ForEachAsync(e => e.Amount = model.Storage[index]);
+                            int key;
+                            Int32.TryParse(index.Key, out key);
+                            int value;
+                            Int32.TryParse(index.Value, out value);
+                            await _db.Storage.Where(e => e.OrderId == order.Id && e.Id == key).ForEachAsync(e => e.Amount = value);
                         }
                         _db.SaveChanges();
                     }

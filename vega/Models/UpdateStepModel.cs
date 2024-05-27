@@ -14,5 +14,5 @@ public class UpdateStepModel
 
     public bool? IsCompleted { get; set; }
 
-    public Dictionary<int, int>? Storage { get; set; }
+    public Dictionary<string, string>? Storage { get; set; }
 }
