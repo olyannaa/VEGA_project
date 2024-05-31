@@ -71,6 +71,8 @@ public partial class VegaContext : DbContext
 
             entity.ToTable("areas_users");
 
+            entity.Property(e => e.Id).HasColumnName("id");
+
             entity.Property(e => e.UserId)
                 .ValueGeneratedNever()
                 .HasColumnName("user_id");
