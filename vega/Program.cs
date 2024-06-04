@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authentication.Cookies;
+
 using System.Reflection;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -6,9 +6,10 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using vega;
 using vega.Logic;
-using Microsoft.Extensions.Caching.Memory;
+using DinkToPdf.Contracts;
+using DinkToPdf;
+using static Microsoft.AspNetCore.Http.StatusCodes;
 using Minio;
-using System.Diagnostics;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -50,7 +51,16 @@ builder.Services.AddSwaggerGen(options =>
 
 builder.Services.AddTransient<ITokenManager, TokenManager>();
 
-builder.Services.AddTransient<IStorageManager>(storageManager => new StorageManager("10.147.18.80:9000", "devuser", "devpassword"));
+builder.Services.AddMinio(options => {options.WithEndpoint("10.147.18.241:9000")
+                              .WithCredentials("devuser", "devpassword")
+                              .WithSSL(false)
+                              .Build();});
+
+builder.Services.AddTransient<IStorageManager, StorageManager>();
+
+builder.Services.AddSingleton<IConverter>(new SynchronizedConverter(new PdfTools()));
+
+builder.Services.AddTransient<IFileConverter, FileConverter>();
 
 builder.Services.AddSingleton<IConfiguration>(builder.Configuration);
 
@@ -79,6 +89,15 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
+if (!builder.Environment.IsDevelopment())
+{
+    builder.Services.AddHttpsRedirection(options =>
+    {
+        options.RedirectStatusCode = Status308PermanentRedirect;
+        options.HttpsPort = 443;
+    });
+}
+
 var app = builder.Build();
 app.UseCors(builder => 
     builder.WithOrigins("http://localhost:3000")
@@ -96,6 +115,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();

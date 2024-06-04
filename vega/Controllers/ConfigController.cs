@@ -51,12 +51,9 @@ namespace vega.Controllers
                     }
                     
 
-                    foreach (var roleId in userData.RoleIds)
-                    {
-                        var userRole = new RoleUser{UserId = user.Id, RoleId = roleId};
-                        _db.RoleUsers.Add(userRole);
-                        _db.SaveChanges();
-                    }
+                    var userRole = new RoleUser{UserId = user.Id, RoleId = userData.RoleId};
+                    _db.RoleUsers.Add(userRole);
+                    _db.SaveChanges();
                     
                     transaction.Commit();
 
@@ -129,7 +126,7 @@ namespace vega.Controllers
         /// </summary>
         /// <returns>Returns dictionary of roles</returns>
         [HttpGet("role")]
-        public async Task<ActionResult<IDictionary<int, string?>>> GetRolesInfo()
+        public async Task<ActionResult<IDictionary<int, string>>> GetRolesInfo()
         {
             return await _db.Roles
                 .Select(role => new {role.Id, role.Name})

@@ -5,5 +5,11 @@ public interface IStorageManager
     
     public Task DeleteOrderAsync(string? orderKKS, List<string> fileNames, string bucketName);
 
+    public Task UploadFileAsync(Stream fileStream, string directory, string bucketName, string contentType, string name, string? role = null);
+
+    public Task<string> SaveTempFileAsync(Stream fileStream, string fileName);
+
+    public bool TryDeleteTempFile(string filePath);
+
     public Task<(FileStream stream, string contentType)> GetFile(string fileName, string bucketName);
 }

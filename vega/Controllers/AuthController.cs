@@ -2,6 +2,8 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace vega.Controllers
 {
@@ -30,7 +32,7 @@ namespace vega.Controllers
         [HttpPost("login")]
         public async Task<ActionResult<TokenModel>> LogIn([FromBody] UserAuthModel userData)
         {
-            var user = await _db.Users.SingleOrDefaultAsync(user => user.Login == userData.Login);
+            var user = await _db.Users.FirstOrDefaultAsync(user => user.Login == userData.Login);
 
             if (user == null || user.Login == null)
             {
@@ -41,18 +43,23 @@ namespace vega.Controllers
             {
                 return Unauthorized("Wrong password");
             }
+            
+            var role = await _db.Users.Where(e => e.Login == user.Login).Select(e => e.RoleUser.Role).FirstAsync();
 
-            var userRoles = _db.RoleUsers
-                            .Where(userRole => userRole.UserId == user.Id)
-                            .Select(userRoles => userRoles.RoleId);
-
-
-            var roles = String.Join(';', _db.Roles.Where(role => userRoles.Contains(role.Id)).Select(role => role.Name));
-
+            var privileges = _db.RolePriveleges.Where(e => e.RoleId == role.Id)
+                                            .Select(e => e.Privilege)
+                                            .ToDictionary(e => e.Id, e => new Dictionary<string, object>()
+                                                                        { 
+                                                                            {"name", e.Name}, 
+                                                                            {"description", e.Description} 
+                                                                        });
+            
+            var jsonPrivileges = JsonSerializer.Serialize(privileges);
             var claims = new List<Claim> {
                 new Claim(VegaClaimTypes.Id, user.Id.ToString()),
                 new Claim(VegaClaimTypes.Login, user.Login),
-                new Claim(ClaimTypes.Role, roles), 
+                new Claim(ClaimTypes.Role, role.Name), 
+                new Claim(VegaClaimTypes.Privileges, jsonPrivileges)
             };
 
             if (user.FullName != null)

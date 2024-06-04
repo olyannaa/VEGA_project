@@ -5,6 +5,9 @@ namespace vega;
 
 public partial class AreaUser
 {
+
+    public int Id { get; set; }
+    
     public int UserId { get; set; }
 
     public int? AreaId { get; set; }

@@ -1,26 +1,18 @@
-using System.IO.Pipelines;
-using System.Net.Http.Headers;
-using Microsoft.AspNetCore.Connections;
+
 using Microsoft.AspNetCore.StaticFiles;
-using Microsoft.Extensions.FileSystemGlobbing;
-using Microsoft.Win32.SafeHandles;
 using Minio;
 using Minio.DataModel.Args;
 using Minio.Exceptions;
-using vega;
 public class StorageManager : IStorageManager
 {
     private readonly IMinioClient _minioClient;
 
-    public StorageManager(string host, string access, string secret)
+    public StorageManager(IMinioClient minioClient)
     {
-        _minioClient = new MinioClient().WithEndpoint(host)
-                                        .WithCredentials(access, secret)
-                                        .WithSSL(false)
-                                        .Build();
+        _minioClient = minioClient;
     }
 
-    public async Task CreateOrderAsync(IFormFileCollection files, string kks, string bucketName, string? description, string? role)
+    public async Task CreateOrderAsync(IFormFileCollection files, string kks, string bucketName, string? description, string? step)
     { 
         if (kks == null)
         {
@@ -29,10 +21,8 @@ public class StorageManager : IStorageManager
         foreach (IFormFile file in files)
         {
             var fileStream = file.OpenReadStream();
-            await UploadFileAsync(fileStream, kks, bucketName, file.ContentType, file.FileName, role);
+            await UploadFileAsync(fileStream, kks, bucketName, file.ContentType, file.FileName, step);
         }
-
-        await InitMetaAsync(description, kks, bucketName, role);
     }
 
     public async Task DeleteOrderAsync(string? orderKKS, List<string> fileNames, string bucketName)
@@ -51,27 +41,12 @@ public class StorageManager : IStorageManager
         await _minioClient.RemoveObjectsAsync(removeArgs).ConfigureAwait(false);
     }
 
-    private async Task InitMetaAsync(string? description, string orderKKS, string bucketName, string? role, string meta = "meta.txt")
+    public async Task UploadFileAsync(Stream fileStream, string directory, string bucketName, string contentType, string name, string? step = null)
     {
-        var filePath = Path.Combine(Path.GetTempPath(), meta);
-
-            using (StreamWriter sw = File.CreateText(filePath))
-            {           
-                sw.WriteLine(description);
-                sw.Close();
-            }
-            var fileStream = new FileStream(filePath, FileMode.Open);
-            await UploadFileAsync(fileStream, orderKKS, bucketName, "text/txt", meta, role);
-            fileStream.Close();
-            File.Delete(filePath);
-    }
-
-    public async Task UploadFileAsync(Stream fileStream, string directory, string bucketName, string contentType, string name, string? role = null)
-    {
-        var updRole = role != null ? role + '/' : null;
+        var updStep = step != null ? step + '/' : null;
         var putObjectArgs = new PutObjectArgs()
             .WithBucket(bucketName)
-            .WithObject($"{directory}/{updRole}{name}")
+            .WithObject($"{directory}/{updStep}{name}")
             .WithStreamData(fileStream)
             .WithObjectSize(fileStream.Length)
             .WithContentType(contentType);
@@ -80,21 +55,21 @@ public class StorageManager : IStorageManager
         fileStream.Close();
     }
 
-    public async Task<(FileStream stream, string contentType)> GetFile(string fileName, string bucketName)
+    public async Task<(FileStream stream, string contentType)> GetFile(string filePath, string bucketName)
     {
-        var filePath = Path.Combine(Path.GetTempPath(), fileName.Split("/").Last());
-        using (var fileStream = new FileStream(filePath, FileMode.Create))
+        var tempFilePath = Path.Combine(Path.GetTempPath(), filePath.Split("/").Last());
+        using (var fileStream = new FileStream(tempFilePath, FileMode.Create))
         {
             try
             {
                 StatObjectArgs statObjectArgs = new StatObjectArgs()
                                                 .WithBucket(bucketName)
-                                                .WithObject(fileName);
+                                                .WithObject(filePath);
                 await _minioClient.StatObjectAsync(statObjectArgs);
 
                 GetObjectArgs getObjectArgs = new GetObjectArgs()
                                               .WithBucket(bucketName)
-                                              .WithObject(fileName)
+                                              .WithObject(filePath)
                                               .WithCallbackStream((stream) =>
                                                    {
                                                        stream.CopyTo(fileStream);
@@ -111,11 +86,31 @@ public class StorageManager : IStorageManager
 
         var provider = new FileExtensionContentTypeProvider();
         string? contentType;
-        if (!provider.TryGetContentType(fileName, out contentType))
+        if (!provider.TryGetContentType(filePath, out contentType))
         {
             contentType = "application/octet-stream";
         }
-        var stream = new FileStream(filePath, FileMode.Open);
+        var stream = new FileStream(tempFilePath, FileMode.Open);
         return (stream, contentType);
+    }
+
+    public async Task<string> SaveTempFileAsync(Stream fileStream, string fileName)
+    {
+        var tempPath = Path.Combine(Path.GetTempPath(), fileName);
+        var buffer = new byte[fileStream.Length];
+        fileStream.Read(buffer);
+        fileStream.Close();
+        await File.WriteAllBytesAsync(tempPath, buffer);
+        return tempPath;
+    }
+
+    public bool TryDeleteTempFile(string filePath)
+    {
+        if (File.Exists(filePath))
+        {
+            File.Delete(filePath);
+            return true;
+        }
+        return false;
     }
 }

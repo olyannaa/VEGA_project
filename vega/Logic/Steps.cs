@@ -1,15 +1,21 @@
 public static class Steps
 {
 
-    public const string Documentation = "Внесение входной документации";
+    public const string Entry = "Внесение входной документации";
 
-    public const string TIDevelopment = "Разработка технических данных";
+    public const string TIDev = "Разработка технических данных";
 
-    public const string DDDevelopment = "Разработка конструкторской документации";
+    public const string DDDev = "Разработка конструкторской документации";
 
-    public const string IDPPSDevelopment = "Разработка ИДП и ПС";
+    public const string SchemeDev = "Разработка электросхем";
+
+    public const string SpecDev = "Разработка чертежей и спецификации";
+
+    public const string IDPPSDev = "Разработка ИДП и ПС";
 
     public const string Approval = "Согласование АЭП";
 
-    public const string Supply = "Отдел поставки";
+    public const string Supply = "Отдел снабжения";
+
+    public const string Storage = "Склад";
 }
