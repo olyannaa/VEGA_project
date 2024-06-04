@@ -8,6 +8,7 @@ using vega;
 using vega.Logic;
 using DinkToPdf.Contracts;
 using DinkToPdf;
+using static Microsoft.AspNetCore.Http.StatusCodes;
 using Minio;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -66,7 +67,6 @@ builder.Services.AddSingleton<IConfiguration>(builder.Configuration);
 builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 
 builder.Services.AddDbContext<VegaContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("VegaDB")));
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options =>
@@ -88,6 +88,15 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
+if (!builder.Environment.IsDevelopment())
+{
+    builder.Services.AddHttpsRedirection(options =>
+    {
+        options.RedirectStatusCode = Status308PermanentRedirect;
+        options.HttpsPort = 443;
+    });
+}
+
 var app = builder.Build();
 app.UseCors(builder => 
     builder.WithOrigins("http://localhost:3000")
@@ -105,6 +114,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
