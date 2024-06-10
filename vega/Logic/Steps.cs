@@ -7,7 +7,7 @@ public static class Steps
 
     public const string DDDev = "Разработка конструкторской документации";
 
-    public const string SchemeDev = "Внесение электросхем";
+    public const string SchemeDev = "Внесение электросхемы";
 
     public const string SpecDev = "Внесение чертежей и спецификации";
 
@@ -15,7 +15,7 @@ public static class Steps
 
     public const string Approval = "Согласование АЭП";
 
-    public const string Supply = "Отдел снабжения";
+    public const string Supply = "Отдел поставки";
 
     public const string Storage = "Склад";
 }

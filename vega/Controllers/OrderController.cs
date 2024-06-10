@@ -144,7 +144,7 @@ namespace vega.Controllers
                 return BadRequest(e.Message);
             }
 
-            await _storageManager.DeleteOrderAsync(kks, filePaths, "vega-orders-bucket");
+            await _storageManager.DeleteFilesAsync(filePaths, "vega-orders-bucket");
             return Ok();
         }
 
@@ -449,6 +449,14 @@ namespace vega.Controllers
                         }
                         _db.SaveChanges();
                     }
+                }
+
+                var filesToDelete = _db.OrderFiles.AsNoTracking().Where(e => e.StepId == step.Id && e.OrderId == order.Id && e.IsNeededToChange == true);
+                await _storageManager.DeleteFilesAsync(filesToDelete.Select(e => e.Path).ToList(), "vega-orders-bucket");
+                foreach (var file in filesToDelete.ToList())
+                {
+                    _db.Remove(file);
+                    _db.SaveChanges();
                 }
 
                 foreach (IFormFile file in files)

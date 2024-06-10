@@ -25,12 +25,8 @@ public class StorageManager : IStorageManager
         }
     }
 
-    public async Task DeleteOrderAsync(string? orderKKS, List<string> fileNames, string bucketName)
+    public async Task DeleteFilesAsync(List<string> fileNames, string bucketName)
     {
-        if (orderKKS == null)
-        {
-            throw new NullReferenceException();
-        }
         if (!fileNames.Any())
         {
             return;

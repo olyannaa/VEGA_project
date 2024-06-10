@@ -51,7 +51,7 @@ builder.Services.AddSwaggerGen(options =>
 
 builder.Services.AddTransient<ITokenManager, TokenManager>();
 
-builder.Services.AddMinio(options => {options.WithEndpoint("10.147.18.241:9000")
+builder.Services.AddMinio(options => {options.WithEndpoint("78.24.217.32:9000")
                               .WithCredentials("devuser", "devpassword")
                               .WithSSL(false)
                               .Build();});
