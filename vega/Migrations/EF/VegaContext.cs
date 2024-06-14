@@ -40,7 +40,7 @@ public partial class VegaContext : DbContext
 
     public virtual DbSet<RolePrivilege> RolePriveleges { get; set; }
 
-    public virtual DbSet<Component> Storage { get; set; }
+    public virtual DbSet<StorageComponent> Storage { get; set; }
 
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
@@ -292,7 +292,7 @@ public partial class VegaContext : DbContext
             
         });
 
-        modelBuilder.Entity<Component>(entity =>
+        modelBuilder.Entity<StorageComponent>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("storage_pk");
 

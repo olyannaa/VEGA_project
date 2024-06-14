@@ -406,7 +406,7 @@ namespace vega.Controllers
                     foreach (var key in data.Keys)
                     {
                         var jsonComponent = data[key];
-                        var component = new Component()
+                        var component = new StorageComponent()
                         {
                             OrderId = order.Id,
                             Designation = jsonComponent.Designation,
