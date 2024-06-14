@@ -3,7 +3,7 @@ public partial class Component
 {
     public int Id { get; set; }
 
-    public int ParentId { get; set; }
+    public int? ParentId { get; set; }
 
     public int DesignationId { get; set; }
 
@@ -21,5 +21,5 @@ public partial class Component
 
     public virtual Component? Parent { get; set; }
 
-    public virtual Component? Child { get; set; }
+    public virtual ICollection<Component>? Children { get; set; }
 }

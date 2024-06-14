@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using DocumentFormat.OpenXml.Office2013.Excel;
+using DocumentFormat.OpenXml.Drawing.Diagrams;
 
 namespace vega.Controllers
 {
@@ -38,6 +39,69 @@ namespace vega.Controllers
             {
                 return NotFound();
             }
+            try
+            {
+                _db.Database.BeginTransaction();
+                var scheme = new Scheme()
+                {
+                    Path = "shemes/test/test.jpg"
+                };
+                _db.Add(scheme);
+                _db.SaveChanges();
+
+                var designation = new Designation()
+                {
+                    FullName = "TEST.01.2024",
+                    ProcessId = 2,
+                    SchemesId = scheme.Id
+                };
+                _db.Add(designation);
+                _db.SaveChanges();
+
+                var component1 = new Component()
+                {
+                    DesignationId = designation.Id,
+                    Amount = 0,
+                    Count = 50,
+                    IsDeveloped = false,
+                    ParentId = null
+                };
+                _db.Add(component1);
+                _db.SaveChanges();
+
+                var oc = new OrderComponent()
+                {
+                    OrderId = order.Id,
+                    ComponentId = component1.Id,
+                };
+                _db.Add(oc);
+                _db.SaveChanges();
+
+                var areas = _db.TechProccesses.FirstOrDefault(e => e.Id == 2).AreaIds;
+                Task task = null;
+                for (int i = 0; i < areas.Length; i++)
+                {
+                    int? taskId = task?.Id ?? null;
+                    task = new Task()
+                    {
+                        ComponentId = component1.Id,
+                        UserId = null,
+                        AreaId = areas[i],
+                        StatusId = 1,
+                        ParentId = taskId ?? null,
+                        IsAvaliable = i == 0 ? true : false
+                    };
+                    _db.Add(task);
+                    _db.SaveChanges();
+                }
+                _db.Database.CommitTransaction();
+            }
+            catch (Exception ex)
+            {
+                _db.Database.RollbackTransaction();
+                return BadRequest(ex.Message);
+            }
+
             return Ok();
 
         }
@@ -78,7 +142,7 @@ namespace vega.Controllers
                 return NotFound();
             }
 
-            if (taskInfo.User != null || taskInfo.UserId != user.Id)
+            if (taskInfo.User != null && taskInfo.UserId != user.Id)
             {
                 return Forbid();
             }
@@ -90,8 +154,8 @@ namespace vega.Controllers
                 if (taskInfo.UserId == null)
                 {
                     taskInfo.UserId = user.Id;
+                    _db.SaveChanges();
                 }
-                _db.SaveChanges();
 
                 if (status.Id == 3)
                 {

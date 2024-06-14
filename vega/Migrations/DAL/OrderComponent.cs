@@ -11,5 +11,5 @@ public partial class OrderComponent
 
     public Order Order { get; set;} = null!;
 
-    public Component? Component { get; set; }
+    public Component Component { get; set; } = null!;
 }

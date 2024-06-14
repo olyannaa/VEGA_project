@@ -4,13 +4,13 @@ public partial class Designation
 {
     public int Id { get; set; }
 
-    public int FullName { get; set; }
-
+    public string FullName { get; set; } = null!;
+ 
     public int ProcessId { get; set; }
 
     public int SchemesId { get; set; }
 
-    public TechProccess Proccess { get; set; } = null!;
+    public TechProcess Proccess { get; set; } = null!;
 
     public Scheme Scheme { get; set; } = null!;
 

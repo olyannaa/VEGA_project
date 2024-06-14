@@ -12,7 +12,7 @@ public partial class Task
 
     public int StatusId { get; set;}
 
-    public int ParentId { get; set;}
+    public int? ParentId { get; set;}
 
     public bool IsAvaliable { get; set;}
 

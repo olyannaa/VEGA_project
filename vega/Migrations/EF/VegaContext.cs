@@ -54,6 +54,8 @@ public partial class VegaContext : DbContext
 
     public virtual DbSet<Status> Statuses { get; set; }
 
+    public virtual DbSet<TechProcess> TechProccesses { get; set; }
+
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -344,8 +346,8 @@ public partial class VegaContext : DbContext
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("components_designation_id_fkey");
 
-            entity.HasOne(d => d.Parent).WithOne(p => p.Child)
-                .HasForeignKey<Component>(d => d.ParentId)
+            entity.HasOne(d => d.Parent).WithMany(p => p.Children)
+                .HasForeignKey(d => d.ParentId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("components_components_fk");
         });
@@ -376,7 +378,7 @@ public partial class VegaContext : DbContext
         {
             entity.HasKey(e => e.Id).HasName("orders_components_pkey");
 
-            entity.ToTable("order_components");
+            entity.ToTable("orders_components");
 
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.OrderId).HasColumnName("order_id");
@@ -453,6 +455,16 @@ public partial class VegaContext : DbContext
             entity.Property(e => e.Name).HasColumnName("name");
         });
 
+        modelBuilder.Entity<TechProcess>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("tech_process_pkey");
+
+            entity.ToTable("tech_process");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.Process).HasColumnName("process");
+        });
+
         OnModelCreatingPartial(modelBuilder);
     }
 
@@ -477,6 +489,8 @@ public partial class VegaContext : DbContext
         }
         return false;
     }
+
+
 
     partial void OnModelCreatingPartial(ModelBuilder modelBuilder);
 }
