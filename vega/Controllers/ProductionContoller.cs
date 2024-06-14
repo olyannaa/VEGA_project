@@ -28,12 +28,10 @@ namespace vega.Controllers
         }
 
         /// <summary>
-        /// Authorizes user in system.
+        /// Creates tasks for order.
         /// </summary>
-        /// <returns>Returns JWT</returns>
-        /// <response code="200">Returns JWT access and refresh</response>
-        /// <response code="400">If user is not registered in system or password is wrong</response>
-        /// <response code="500">If Database does not store users role</response>
+        /// <response code="200">Tasks created</response>
+        /// <response code="404">Order is not found</response>
         [HttpPost("tasks")]
         public ActionResult CreateTasks([FromForm] ProductionTasksModel model)
         {
@@ -140,6 +138,17 @@ namespace vega.Controllers
 
         }
 
+        /// <summary>
+        /// Returns list of tasks.
+        /// </summary>
+        /// <remarks>
+        /// This request returns production tasks depended on area and tasks avaliability. \
+        /// Area is determined by authorized user. If user is not attached to area response 403 returns. \
+        /// Avaliaiblity is determined by component current tech process stage and child components development. \
+        /// In summary: even if there are any production tasks, under circumstances there is no guarantee that tasks will be returned.
+        /// </remarks>
+        /// <response code="200">Tasks returned</response>
+        /// <response code="403">User is not attached to area</response>
         [HttpGet("tasks")]
         public ActionResult GetTasks()
         {
@@ -164,6 +173,14 @@ namespace vega.Controllers
             return Ok(tasks);
         }
 
+        /// <summary>
+        /// Deletes orders tasks.
+        /// </summary>
+        /// <remarks>
+        /// Deletes every production tasks that is correspond to specified order.  
+        /// </remarks>
+        /// <response code="200">Tasks deleted</response>
+        /// <response code="404">Order is not found</response>
         [HttpDelete("tasks")]
         public ActionResult DeleteTasks([FromForm] ProductionTasksModel model)
         {
@@ -189,6 +206,18 @@ namespace vega.Controllers
 
         }
 
+        /// <summary>
+        /// Updates state of the task.
+        /// </summary>
+        /// <remarks>
+        /// This request updates specified task. \
+        /// If there is no responsible for the task Authorized user is becoming authomaticaly. \
+        /// If current task is marked as "Done", next corresponding tasks will become avaliable.   
+        /// </remarks>
+        /// <response code="200">Task is updated</response>
+        /// <response code="400">Wrong status id</response>
+        /// <response code="403">User has no rights to update task</response>
+        /// <response code="404">Order is not found</response>
         [HttpPut("tasks")]
         public ActionResult UpdateTask([FromForm] UpdateTaskModel model)
         {
@@ -271,6 +300,10 @@ namespace vega.Controllers
             return Ok();
         }
 
+        /// <summary>
+        /// Returns task status ids.
+        /// </summary>
+        /// <response code="200">Returns statuses</response>
         [HttpGet("statuses")]
         public ActionResult GetTaskStatuses()
         {
