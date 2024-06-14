@@ -5,6 +5,9 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using DocumentFormat.OpenXml.Office2013.Excel;
 using DocumentFormat.OpenXml.Drawing.Diagrams;
+using Microsoft.EntityFrameworkCore;
+using System.Linq.Expressions;
+using System.Runtime.Serialization;
 
 namespace vega.Controllers
 {
@@ -42,25 +45,41 @@ namespace vega.Controllers
             try
             {
                 _db.Database.BeginTransaction();
-                var scheme = new Scheme()
+                var scheme1 = new Scheme()
                 {
                     Path = "shemes/test/test.jpg"
                 };
-                _db.Add(scheme);
+                _db.Add(scheme1);
                 _db.SaveChanges();
 
-                var designation = new Designation()
+                var scheme2 = new Scheme()
+                {
+                    Path = "shemes/test/test.jpg"
+                };
+                _db.Add(scheme2);
+                _db.SaveChanges();
+
+                var designation1 = new Designation()
                 {
                     FullName = "TEST.01.2024",
                     ProcessId = 2,
-                    SchemesId = scheme.Id
+                    SchemesId = scheme1.Id
                 };
-                _db.Add(designation);
+                _db.Add(designation1);
+                _db.SaveChanges();
+
+                var designation2 = new Designation()
+                {
+                    FullName = "TEST.02.2024",
+                    ProcessId = 2,
+                    SchemesId = scheme2.Id
+                };
+                _db.Add(designation2);
                 _db.SaveChanges();
 
                 var component1 = new Component()
                 {
-                    DesignationId = designation.Id,
+                    DesignationId = designation1.Id,
                     Amount = 0,
                     Count = 50,
                     IsDeveloped = false,
@@ -69,30 +88,45 @@ namespace vega.Controllers
                 _db.Add(component1);
                 _db.SaveChanges();
 
-                var oc = new OrderComponent()
+                var component2 = new Component()
                 {
-                    OrderId = order.Id,
-                    ComponentId = component1.Id,
+                    DesignationId = designation2.Id,
+                    Amount = 0,
+                    Count = 50,
+                    IsDeveloped = false,
+                    ParentId = component1.Id
                 };
-                _db.Add(oc);
+                _db.Add(component2);
                 _db.SaveChanges();
 
-                var areas = _db.TechProccesses.FirstOrDefault(e => e.Id == 2).AreaIds;
-                Task task = null;
-                for (int i = 0; i < areas.Length; i++)
+                var components = new Component[] { component1, component2 };
+                foreach (var component in components)
                 {
-                    int? taskId = task?.Id ?? null;
-                    task = new Task()
+                    var oc = new OrderComponent()
                     {
-                        ComponentId = component1.Id,
-                        UserId = null,
-                        AreaId = areas[i],
-                        StatusId = 1,
-                        ParentId = taskId ?? null,
-                        IsAvaliable = i == 0 ? true : false
+                        OrderId = order.Id,
+                        ComponentId = component.Id,
                     };
-                    _db.Add(task);
+                    _db.Add(oc);
                     _db.SaveChanges();
+
+                    var areas = _db.TechProccesses.FirstOrDefault(e => e.Id == 2).AreaIds;
+                    Task task = null;
+                    for (int i = 0; i < areas.Length; i++)
+                    {
+                        int? taskId = task?.Id ?? null;
+                        task = new Task()
+                        {
+                            ComponentId = component.Id,
+                            UserId = null,
+                            AreaId = areas[i],
+                            StatusId = 1,
+                            ParentId = taskId ?? null,
+                            IsAvaliable = (component.Children == null && i == 0) ? true : false
+                        };
+                        _db.Add(task);
+                        _db.SaveChanges();
+                    }
                 }
                 _db.Database.CommitTransaction();
             }
@@ -116,9 +150,43 @@ namespace vega.Controllers
                 return Forbid();
             }
 
-            var tasks = _db.Tasks.Where(e => e.AreaId == areaUser.AreaId && e.IsAvaliable).ToArray();
+            var tasks = _db.Tasks
+                            .Where(e => e.AreaId == areaUser.AreaId && e.IsAvaliable)
+                            .Select(e => new Dictionary<string, object?>()
+                            {
+                                {"task_id", e.Id},
+                                {"designation", e.Component.Designation.FullName},
+                                {"status_id", e.StatusId},
+                                {"responsible", e.User.FullName},
+                                {"scheme_path", e.Component.Designation.Scheme.Path},
+                            });
 
             return Ok(tasks);
+        }
+
+        [HttpDelete("tasks")]
+        public ActionResult DeleteTasks([FromForm] ProductionTasksModel model)
+        {
+            var order = _db.Orders.FirstOrDefault(o => o.KKS == model.KKS);
+            if (order == null)
+            {
+                return NotFound();
+            }
+            try
+            {
+                _db.Database.BeginTransaction();
+                var schemes =_db.Schemes.Where(e => e.Designation.Component.OrderComponent.OrderId == order.Id);
+                _db.RemoveRange(schemes);
+                _db.SaveChanges();
+                _db.Database.CommitTransaction();
+            }
+            catch (Exception ex)
+            {
+                _db.Database.RollbackTransaction();
+                return BadRequest(ex.Message);
+            }
+            return Ok();
+
         }
 
         [HttpPut("tasks")]
@@ -163,13 +231,34 @@ namespace vega.Controllers
                     if (child != null)
                     {
                         child.IsAvaliable = true;
+                        _db.SaveChanges();
                     }
                     else
                     {
-                        var component = task.Select(e => e.Component).First();
-                        component.IsDeveloped = true;
+                        var component = task.Select(e => e.Component);
+                        var componentInfo = component.First();
+                        componentInfo.IsDeveloped = true;
+                        _db.SaveChanges();
+
+                        var parentComponent = component.Select(e => e.Parent);
+                        if (parentComponent.FirstOrDefault() != null)
+                        {
+                            var children = parentComponent.Select(e => e.Children);
+                            if (children.FirstOrDefault() != null)
+                            {
+                                var isChildrenDeveloped = children.Select(e => e.All(e => e.IsDeveloped)).First();
+                                if (isChildrenDeveloped)
+                                {
+                                    var tasks = parentComponent.Select(e => e.Tasks.Where(e => e.Parent == null).ToArray()).First();
+                                    foreach (var difTask in tasks)
+                                    {
+                                        difTask.IsAvaliable = true;
+                                        _db.SaveChanges();
+                                    }
+                                }
+                            }
+                        }
                     }
-                    _db.SaveChanges();
                 }
                 _db.Database.CommitTransaction();
             }

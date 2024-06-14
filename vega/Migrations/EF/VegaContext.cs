@@ -343,12 +343,12 @@ public partial class VegaContext : DbContext
 
             entity.HasOne(d => d.Designation).WithOne(p => p.Component)
                 .HasForeignKey<Component>(d => d.DesignationId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
+                .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("components_designation_id_fkey");
 
             entity.HasOne(d => d.Parent).WithMany(p => p.Children)
                 .HasForeignKey(d => d.ParentId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
+                .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("components_components_fk");
         });
 
@@ -370,7 +370,7 @@ public partial class VegaContext : DbContext
 
             entity.HasOne(d => d.Scheme).WithOne(p => p.Designation)
                 .HasForeignKey<Designation>(d => d.SchemesId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
+                .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("designations_schemes_id_fkey");
         });
 
@@ -391,7 +391,7 @@ public partial class VegaContext : DbContext
 
             entity.HasOne(d => d.Component).WithOne(p => p.OrderComponent)
                 .HasForeignKey<OrderComponent>(d => d.ComponentId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
+                .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("orders_components_component_id_fkey");
         });
 
@@ -421,7 +421,7 @@ public partial class VegaContext : DbContext
 
             entity.HasOne(d => d.Component).WithMany(p => p.Tasks)
                 .HasForeignKey(d => d.ComponentId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
+                .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("tasks_component_id_fkey");
 
             entity.HasOne(d => d.Area).WithMany(p => p.Tasks)
@@ -441,7 +441,7 @@ public partial class VegaContext : DbContext
 
             entity.HasOne(d => d.Parent).WithOne(p => p.Child)
                 .HasForeignKey<Task>(d => d.ParentId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
+                .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("tasks_tasks_fk");
         });
         
