@@ -4,4 +4,5 @@ public partial class Status
 
     public string Name { get; set; } = null!;
 
+    public virtual ICollection<Task>? Tasks { get; set; }
 }

@@ -12,7 +12,7 @@ public class StorageManager : IStorageManager
         _minioClient = minioClient;
     }
 
-    public async Task CreateOrderAsync(IFormFileCollection files, string kks, string bucketName, string? description, string? step)
+    public void CreateOrder(IFormFileCollection files, string kks, string bucketName, string? description, string? step)
     { 
         if (kks == null)
         {
@@ -21,11 +21,11 @@ public class StorageManager : IStorageManager
         foreach (IFormFile file in files)
         {
             var fileStream = file.OpenReadStream();
-            await UploadFileAsync(fileStream, kks, bucketName, file.ContentType, file.FileName, step);
+            UploadFileAsync(fileStream, kks, bucketName, file.ContentType, file.FileName, step);
         }
     }
 
-    public async Task DeleteFilesAsync(List<string> fileNames, string bucketName)
+    public async void DeleteFilesAsync(List<string> fileNames, string bucketName)
     {
         if (!fileNames.Any())
         {
@@ -37,7 +37,7 @@ public class StorageManager : IStorageManager
         await _minioClient.RemoveObjectsAsync(removeArgs).ConfigureAwait(false);
     }
 
-    public async Task UploadFileAsync(Stream fileStream, string directory, string bucketName, string contentType, string name, string? step = null)
+    public async void UploadFileAsync(Stream fileStream, string directory, string bucketName, string contentType, string name, string? step = null)
     {
         var updStep = step != null ? step + '/' : null;
         var putObjectArgs = new PutObjectArgs()

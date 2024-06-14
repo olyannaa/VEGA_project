@@ -1,11 +1,11 @@
 
 public interface IStorageManager
 {
-    public Task CreateOrderAsync(IFormFileCollection files, string kks, string bucketName, string? description, string role);
+    public void CreateOrder(IFormFileCollection files, string kks, string bucketName, string? description, string role);
     
-    public Task DeleteFilesAsync(List<string> fileNames, string bucketName);
+    public void DeleteFilesAsync(List<string> fileNames, string bucketName);
 
-    public Task UploadFileAsync(Stream fileStream, string directory, string bucketName, string contentType, string name, string? role = null);
+    public void UploadFileAsync(Stream fileStream, string directory, string bucketName, string contentType, string name, string? role = null);
 
     public Task<string> SaveTempFileAsync(Stream fileStream, string fileName);
 

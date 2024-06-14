@@ -1,3 +1,5 @@
+using vega;
+
 public partial class Task
 {
     public int Id { get; set; }
@@ -12,6 +14,13 @@ public partial class Task
 
     public int ParentId { get; set;}
 
-    public bool Is_avaliable { get; set;}
+    public bool IsAvaliable { get; set;}
 
+    public Area Area { get; set; } = null!;
+
+    public Component Component { get; set; } = null!;
+
+    public Status Status { get; set; } = null!;
+
+    public User? User { get; set; }
 }

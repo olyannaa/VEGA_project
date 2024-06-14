@@ -18,4 +18,6 @@ public partial class User
     public virtual RoleUser RoleUser { get; } = null!;
 
     public virtual ICollection<OrderStep> OrderSteps { get; set; } = null!;
+
+    public virtual ICollection<Task> Tasks { get; set; } = null!;
 }

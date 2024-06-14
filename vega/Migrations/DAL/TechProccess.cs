@@ -4,4 +4,6 @@ public partial class TechProccess
 
     public string? Proccess { get; set; }
 
+    public virtual ICollection<Designation>? Designations { get; set; }
+
 }

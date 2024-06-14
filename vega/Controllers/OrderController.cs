@@ -37,7 +37,7 @@ namespace vega.Controllers
         /// <response code="200">Order created successfully</response>
         /// <response code="400">\Bad request</response>
         [HttpPost()]
-        public async Task<ActionResult> CreateNewOrder(IFormFileCollection files, [FromForm] OrderModel order)
+        public ActionResult CreateNewOrder(IFormFileCollection files, [FromForm] OrderModel order)
         {
             if (_db.Orders.Where(e => e.KKS == order.KKS).FirstOrDefault() != null || files == null || files.Count() == 0)
             {
@@ -83,7 +83,7 @@ namespace vega.Controllers
                     _db.SaveChanges();
                 }
 
-                await _storageManager.CreateOrderAsync(files, order.KKS, "vega-orders-bucket", order.Description, Steps.Entry);
+                _storageManager.CreateOrder(files, order.KKS, "vega-orders-bucket", order.Description, Steps.Entry);
                 transaction.Commit();
             }
             catch (Exception e)
@@ -102,7 +102,7 @@ namespace vega.Controllers
         /// <response code="200">Order deleted successfully</response>
         /// <response code="400">\Bad request</response>
         [HttpDelete("files/{kks}")]
-        public async Task<ActionResult> DeleteCompleteOrder([FromRoute] string kks)
+        public ActionResult DeleteCompleteOrder([FromRoute] string kks)
         {
             var order = _db.Orders.FirstOrDefault(e => e.KKS == kks);
             if (order == null)
@@ -144,7 +144,7 @@ namespace vega.Controllers
                 return BadRequest(e.Message);
             }
 
-            await _storageManager.DeleteFilesAsync(filePaths, "vega-orders-bucket");
+            _storageManager.DeleteFilesAsync(filePaths, "vega-orders-bucket");
             return Ok();
         }
 
@@ -452,7 +452,7 @@ namespace vega.Controllers
                 }
 
                 var filesToDelete = _db.OrderFiles.AsNoTracking().Where(e => e.StepId == step.Id && e.OrderId == order.Id && e.IsNeededToChange == true);
-                await _storageManager.DeleteFilesAsync(filesToDelete.Select(e => e.Path).ToList(), "vega-orders-bucket");
+                _storageManager.DeleteFilesAsync(filesToDelete.Select(e => e.Path).ToList(), "vega-orders-bucket");
                 foreach (var file in filesToDelete.ToList())
                 {
                     _db.Remove(file);
@@ -472,7 +472,7 @@ namespace vega.Controllers
                     _db.SaveChanges();
                     await _db.OrderFiles.Where(e => e.OrderId == order.Id && step.Id == orderStep.Id).ForEachAsync(e => e.IsNeededToChange = false);
                     _db.SaveChanges();
-                    await _storageManager.UploadFileAsync(file.OpenReadStream(), model.KKS, "vega-orders-bucket", file.ContentType, file.FileName, step.Name);
+                    _storageManager.UploadFileAsync(file.OpenReadStream(), model.KKS, "vega-orders-bucket", file.ContentType, file.FileName, step.Name);
                 }
 
                 transaction.Commit();

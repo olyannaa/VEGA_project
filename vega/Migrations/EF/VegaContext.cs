@@ -42,6 +42,16 @@ public partial class VegaContext : DbContext
 
     public virtual DbSet<StorageComponent> Storage { get; set; }
 
+    public virtual DbSet<Component> Components { get; set; }
+
+    public virtual DbSet<Designation> Designations { get; set; }
+
+    public virtual DbSet<OrderComponent> OrderComponents { get; set; }
+
+    public virtual DbSet<Scheme> Schemes { get; set; }
+
+    public virtual DbSet<Task> Tasks { get; set; }
+
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -314,6 +324,114 @@ public partial class VegaContext : DbContext
                 .HasConstraintName("storage_orders_fk");
         });
 
+        modelBuilder.Entity<Component>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("components_pkey");
+
+            entity.ToTable("components");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.ParentId).HasColumnName("parent_id");
+            entity.Property(e => e.DesignationId).HasColumnName("designation_id");
+            entity.Property(e => e.Count).HasColumnName("count");
+            entity.Property(e => e.Amount).HasColumnName("amount");
+            entity.Property(e => e.IsDeveloped).HasColumnName("is_developed");
+
+            entity.HasOne(d => d.Designation).WithOne(p => p.Component)
+                .HasForeignKey<Component>(d => d.DesignationId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("components_designation_id_fkey");
+        });
+
+        modelBuilder.Entity<Designation>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("designations_pkey");
+
+            entity.ToTable("designations");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.FullName).HasColumnName("full_name");
+            entity.Property(e => e.ProcessId).HasColumnName("process_id");
+            entity.Property(e => e.SchemesId).HasColumnName("schemes_id");
+
+            entity.HasOne(d => d.Proccess).WithMany(p => p.Designations)
+                .HasForeignKey(d => d.ProcessId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("designations_process_id_fkey");
+
+            entity.HasOne(d => d.Scheme).WithOne(p => p.Designation)
+                .HasForeignKey<Designation>(d => d.SchemesId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("designations_schemes_id_fkey");
+        });
+
+        modelBuilder.Entity<OrderComponent>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("orders_components_pkey");
+
+            entity.ToTable("order_components");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.OrderId).HasColumnName("order_id");
+            entity.Property(e => e.ComponentId).HasColumnName("component_id");
+
+            entity.HasOne(d => d.Order).WithMany(p => p.OrderComponents)
+                .HasForeignKey(d => d.OrderId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("orders_components_order_id_fkey");
+
+            entity.HasOne(d => d.Component).WithOne(p => p.OrderComponent)
+                .HasForeignKey<OrderComponent>(d => d.ComponentId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("orders_components_component_id_fkey");
+        });
+
+        modelBuilder.Entity<Scheme>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("schemes_pkey");
+
+            entity.ToTable("schemes");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.Path).HasColumnName("scheme_path");
+        });
+        
+        modelBuilder.Entity<Task>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("tasks_pkey");
+
+            entity.ToTable("tasks");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.ComponentId).HasColumnName("component_id");
+            entity.Property(e => e.UserId).HasColumnName("user_id");
+            entity.Property(e => e.AreaId).HasColumnName("area_id");
+            entity.Property(e => e.StatusId).HasColumnName("status_id");
+            entity.Property(e => e.ParentId).HasColumnName("parent_id");
+            entity.Property(e => e.IsAvaliable).HasColumnName("is_avaliable");
+
+            entity.HasOne(d => d.Component).WithMany(p => p.Tasks)
+                .HasForeignKey(d => d.ComponentId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("tasks_component_id_fkey");
+
+            entity.HasOne(d => d.Area).WithMany(p => p.Tasks)
+                .HasForeignKey(d => d.AreaId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("tasks_area_id_fkey");
+
+            entity.HasOne(d => d.Status).WithMany(p => p.Tasks)
+                .HasForeignKey(d => d.StatusId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("tasks_status_id_fkey");
+
+            entity.HasOne(d => d.User).WithMany(p => p.Tasks)
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("tasks_user_id_fkey");
+        });
+        
+        
         OnModelCreatingPartial(modelBuilder);
     }
 

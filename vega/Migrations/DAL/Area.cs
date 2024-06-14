@@ -10,4 +10,6 @@ public partial class Area
     public string? AreaName { get; set; }
 
     public virtual ICollection<AreaUser>? AreaUsers { get; }
+
+    public virtual ICollection<Task>? Tasks { get; }
 }
