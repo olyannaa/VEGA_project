@@ -45,7 +45,8 @@ namespace vega.Controllers
                     _db.SaveChanges();
                     if (userData.AreaId != null)
                     {
-                        var areaUser = new AreaUser{UserId = user.Id, AreaId = userData.AreaId};
+                        var areaId = (int) userData.AreaId;
+                        var areaUser = new AreaUser{UserId = user.Id, AreaId = areaId};
                         _db.AreaUsers.Add(areaUser);
                         _db.SaveChanges();
                     }

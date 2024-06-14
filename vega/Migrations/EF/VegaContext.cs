@@ -52,6 +52,8 @@ public partial class VegaContext : DbContext
 
     public virtual DbSet<Task> Tasks { get; set; }
 
+    public virtual DbSet<Status> Statuses { get; set; }
+
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -341,6 +343,11 @@ public partial class VegaContext : DbContext
                 .HasForeignKey<Component>(d => d.DesignationId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("components_designation_id_fkey");
+
+            entity.HasOne(d => d.Parent).WithOne(p => p.Child)
+                .HasForeignKey<Component>(d => d.ParentId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("components_components_fk");
         });
 
         modelBuilder.Entity<Designation>(entity =>
@@ -429,9 +436,23 @@ public partial class VegaContext : DbContext
                 .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("tasks_user_id_fkey");
+
+            entity.HasOne(d => d.Parent).WithOne(p => p.Child)
+                .HasForeignKey<Task>(d => d.ParentId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("tasks_tasks_fk");
         });
         
-        
+        modelBuilder.Entity<Status>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("statuses_pkey");
+
+            entity.ToTable("statuses");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.Name).HasColumnName("name");
+        });
+
         OnModelCreatingPartial(modelBuilder);
     }
 

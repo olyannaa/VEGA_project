@@ -10,9 +10,9 @@ public partial class AreaUser
     
     public int UserId { get; set; }
 
-    public int? AreaId { get; set; }
+    public int AreaId { get; set; }
 
-    public virtual Area? Area { get; set; }
+    public virtual Area Area { get; set; } = null!;
 
     public virtual User User { get; set; } = null!;
 }

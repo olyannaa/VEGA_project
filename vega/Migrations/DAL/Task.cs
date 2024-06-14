@@ -6,7 +6,7 @@ public partial class Task
 
     public int ComponentId { get; set; }
 
-    public int UserId { get; set; }
+    public int? UserId { get; set; }
 
     public int AreaId { get; set; }
 
@@ -23,4 +23,8 @@ public partial class Task
     public Status Status { get; set; } = null!;
 
     public User? User { get; set; }
+
+    public virtual Task? Parent { get; set; }
+
+    public virtual Task? Child { get; set; }
 }
